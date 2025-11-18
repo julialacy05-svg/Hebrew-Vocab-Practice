@@ -272,7 +272,24 @@
       background: #584ee3;
       transform: translateY(-2px);
     }
+/* =========================================
+   MCQ / Arcade Choice Buttons
+========================================= */
+.choice-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #ffffff;
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
 
+.choice-btn:hover {
+  background: #f4f4ff;
+}
     button:active {
       transform: translateY(1px);
       box-shadow: 0 2px 6px rgba(108,99,255,0.2);
@@ -1241,15 +1258,95 @@ arcadeTiles.forEach(tile=>{
 });
 
 /* ============================================================
-   MISSED WORDS QUEUE (placeholder)
+   MISSED WORDS PRACTICE (real quiz)
 ============================================================ */
 let missedQueue = [];
+let missedCurrent = null;
+let missedChoices = [];
 
 window.startMissedPractice = function () {
-  document.getElementById("missed-container").innerHTML =
-    missedQueue.length
-      ? missedQueue.map(w=>`<div style="padding:6px;">${w.he} — ${w.en}</div>`).join("")
-      : "<p>No missed words yet!</p>";
+  const box = document.getElementById("missed-container");
+
+  if (!missedQueue.length) {
+    box.innerHTML = "<p>No missed words yet! Get some wrong in flashcards first 😈</p>";
+    return;
+  }
+
+  nextMissedQuestion();
+};
+
+function nextMissedQuestion() {
+  const box = document.getElementById("missed-container");
+
+  if (!missedQueue.length) {
+    box.innerHTML = "<p>Nice! You’ve reviewed all your missed words for now 🎉</p>";
+    return;
+  }
+
+  const all = getAllWords();
+  if (!all.length) {
+    box.innerHTML = "<p>Add some words first.</p>";
+    return;
+  }
+
+  // Pick a random word from the missed queue
+  missedCurrent = missedQueue[Math.floor(Math.random() * missedQueue.length)];
+
+  // Build choices: 1 correct + up to 3 wrong
+  const choices = [missedCurrent];
+  while (choices.length < 4 && choices.length < all.length) {
+    const c = all[Math.floor(Math.random() * all.length)];
+    if (!choices.includes(c)) choices.push(c);
+  }
+
+  // Shuffle
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  missedChoices = choices;
+
+  box.innerHTML = `
+    <div class="missed-q">
+      <div style="font-size:1.05rem;margin-bottom:0.5rem;">
+        What is the meaning of: <strong>${missedCurrent.he}</strong>?
+      </div>
+      <div id="missed-options"></div>
+      <div id="missed-feedback" style="margin-top:0.6rem;font-size:0.9rem;"></div>
+    </div>
+  `;
+
+  const optBox = document.getElementById("missed-options");
+  optBox.innerHTML = choices
+    .map((c, idx) => `
+      <button class="choice-btn" style="margin-top:6px;" onclick="answerMissed(${idx})">
+        ${c.en}
+      </button>
+    `)
+    .join("");
+}
+
+window.answerMissed = function (index) {
+  const fb = document.getElementById("missed-feedback");
+  if (!missedCurrent || !missedChoices[index]) return;
+
+  const chosen = missedChoices[index];
+
+  if (chosen === missedCurrent) {
+    fb.textContent = "✅ Correct!";
+    missedCurrent.correct = (missedCurrent.correct || 0) + 1;
+    // Remove from queue on success
+    missedQueue = missedQueue.filter(w => w !== missedCurrent);
+  } else {
+    fb.textContent = `❌ Not quite. Correct: ${missedCurrent.en}`;
+    missedCurrent.wrong = (missedCurrent.wrong || 0) + 1;
+    // Keep it in the queue so it appears again
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
+  setTimeout(nextMissedQuestion, 900);
 };
 
 /* ============================================================
@@ -1276,32 +1373,163 @@ window.submitListeningAnswer = function () {
 };
 
 /* ============================================================
-   RANDOM SENTENCE GENERATOR (placeholder)
+   RANDOM SENTENCE GENERATOR (simple)
 ============================================================ */
 window.generateRandomSentence = function () {
-  document.getElementById("generated-sentence").innerText =
-    "(Random sentence generator coming soon)";
+  const box = document.getElementById("generated-sentence");
+  const all = getAllWords();
+
+  if (all.length < 3) {
+    box.innerText = "Add at least 3 words to generate a sentence.";
+    return;
+  }
+
+  // pick 3–6 random unique words
+  const count = Math.min(6, Math.max(3, Math.floor(Math.random() * 4) + 3));
+  const used = new Set();
+  const chosen = [];
+
+  while (chosen.length < count && chosen.length < all.length) {
+    const w = all[Math.floor(Math.random() * all.length)];
+    if (!used.has(w.he)) {
+      used.add(w.he);
+      chosen.push(w);
+    }
+  }
+
+  const hebrew = chosen.map(w => w.he).join(" ");
+  const english = chosen.map(w => w.en).join(" · ");
+
+  box.innerHTML = `
+    <div style="margin-bottom:0.4rem;">${hebrew}</div>
+    <div style="font-size:0.9rem;color:#555;">${english}</div>
+    <div style="font-size:0.8rem;color:#999;margin-top:0.2rem;">
+      (May not be perfect grammar — this is for reading/recognition practice.)
+    </div>
+  `;
 };
 
 /* ============================================================
-   TYPING MODE (placeholder)
+   TYPING MODE (real practice)
 ============================================================ */
+let typingCurrent = null;
+
 window.startTypingMode = function () {
-  document.getElementById("typing-prompt").innerText = "(Typing practice will go here)";
+  const all = getAllWords();
+  const promptEl = document.getElementById("typing-prompt");
+  const inputEl = document.getElementById("typing-input");
+  const fbEl = document.getElementById("typing-feedback");
+
+  if (!all.length) {
+    promptEl.innerText = "Add some words first.";
+    return;
+  }
+
+  typingCurrent = all[Math.floor(Math.random() * all.length)];
+  promptEl.innerHTML = `
+    Translate into Hebrew (with vowels):<br>
+    <strong>${typingCurrent.en}</strong>
+    ${typingCurrent.tr ? `<div style="font-size:0.85rem;color:#777;">(${typingCurrent.tr})</div>` : ""}
+  `;
+  inputEl.value = "";
+  fbEl.innerText = "";
+  inputEl.focus();
 };
 
 window.submitTypingAnswer = function () {
-  document.getElementById("typing-feedback").innerText = "(Typing feedback soon)";
+  const inputEl = document.getElementById("typing-input");
+  const fbEl = document.getElementById("typing-feedback");
+
+  if (!typingCurrent) {
+    fbEl.innerText = "Click 'Begin Typing Practice' first.";
+    return;
+  }
+
+  const user = inputEl.value.trim();
+  const correct = typingCurrent.he.trim();
+
+  if (!user) {
+    fbEl.innerText = "Type your answer first.";
+    return;
+  }
+
+  if (user === correct) {
+    fbEl.innerHTML = "✅ Correct!";
+    typingCurrent.correct = (typingCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correct}</strong>`;
+    typingCurrent.wrong = (typingCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
+  setTimeout(() => {
+    startTypingMode();
+  }, 1000);
 };
 
 /* ============================================================
-   ARCADE MCQ (placeholder)
+   ARCADE MCQ (real game)
 ============================================================ */
+let arcadeMCQCurrent = null;
+let arcadeMCQChoices = [];
+
 window.startArcadeMCQ = function () {
-  document.getElementById("arcade-mcq-question").innerText =
-    "(MCQ Arcade mode coming)";
+  const qEl = document.getElementById("arcade-mcq-question");
+  const optEl = document.getElementById("arcade-mcq-options");
+
+  const all = getAllWords();
+  if (all.length < 2) {
+    qEl.innerText = "Add at least 2 words to play.";
+    optEl.innerHTML = "";
+    return;
+  }
+
+  arcadeMCQCurrent = all[Math.floor(Math.random() * all.length)];
+
+  const choices = [arcadeMCQCurrent];
+  while (choices.length < 4 && choices.length < all.length) {
+    const c = all[Math.floor(Math.random() * all.length)];
+    if (!choices.includes(c)) choices.push(c);
+  }
+
+  // Shuffle
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  arcadeMCQChoices = choices;
+
+  qEl.innerHTML = `What is the meaning of: <strong>${arcadeMCQCurrent.he}</strong>?`;
+  optEl.innerHTML = choices
+    .map((c, idx) => `
+      <button class="choice-btn" style="margin-top:6px;" onclick="answerArcadeMCQ(${idx})">
+        ${c.en}
+      </button>
+    `)
+    .join("");
 };
 
+window.answerArcadeMCQ = function (index) {
+  const qEl = document.getElementById("arcade-mcq-question");
+  const chosen = arcadeMCQChoices[index];
+
+  if (!arcadeMCQCurrent || !chosen) return;
+
+  if (chosen === arcadeMCQCurrent) {
+    qEl.innerHTML += "<div style='margin-top:0.4rem;color:#18a34a;'>✅ Correct!</div>";
+    arcadeMCQCurrent.correct = (arcadeMCQCurrent.correct || 0) + 1;
+  } else {
+    qEl.innerHTML += `<div style='margin-top:0.4rem;color:#b91c1c;'>❌ Wrong. Correct: ${arcadeMCQCurrent.en}</div>`;
+    arcadeMCQCurrent.wrong = (arcadeMCQCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
+  setTimeout(startArcadeMCQ, 1000);
+};
 /* ============================================================
    ADVANCED TOOLS (placeholder)
 ============================================================ */
@@ -1331,8 +1559,47 @@ window.sendConversation = function () {
 };
 
 window.showVisualVocab = function () {
-  document.getElementById("visual-cards").innerHTML =
-    "(Visual vocabulary cards coming)";
+  const box = document.getElementById("visual-cards");
+  const all = getAllWords();
+
+  if (!all.length) {
+    box.innerText = "Add some words first.";
+    return;
+  }
+
+  const emojiFor = (en) => {
+    const e = en.toLowerCase();
+    if (e.includes("day")) return "☀️";
+    if (e.includes("night")) return "🌙";
+    if (e.includes("house") || e.includes("home")) return "🏠";
+    if (e.includes("walk") || e.includes("go")) return "🚶";
+    if (e.includes("eat") || e.includes("food")) return "🍽️";
+    if (e.includes("drink")) return "🥤";
+    if (e.includes("name")) return "📛";
+    if (e.includes("write")) return "✍️";
+    if (e.includes("sleep")) return "😴";
+    return "📘";
+  };
+
+  box.innerHTML = all
+    .map(w => `
+      <div style="
+        display:inline-block;
+        padding:10px 14px;
+        margin:6px;
+        border-radius:14px;
+        background:#ffffff;
+        box-shadow:0 4px 10px rgba(0,0,0,0.08);
+        min-width:120px;
+      ">
+        <div style="font-size:1.5rem;margin-bottom:4px;">${emojiFor(w.en)}</div>
+        <div style="font-weight:700;">${w.he}</div>
+        ${w.tr ? `<div style="font-size:0.85rem;color:#777;">${w.tr}</div>` : ""}
+        <div style="font-size:0.85rem;color:#555;">${w.en}</div>
+      </div>
+    `)
+    .join("");
+};
 };
 
 window.savePracticeSettings = function () {
