@@ -622,21 +622,40 @@
 
 <div class="db-row" style="margin-top:1.5rem;">
 
-  <div class="db-card">
-    <div class="db-card-header">
-      <div class="db-card-title">Teacher Database</div>
-      <div class="db-card-stats" id="teacher-stats">Stats: no attempts yet</div>
-    </div>
-    <div id="teacher-list" class="word-list"></div>
+<div class="db-card">
+  <div class="db-card-header">
+    <div class="db-card-title">Teacher Database</div>
+    <div class="db-card-stats" id="teacher-stats">Stats: no attempts yet</div>
   </div>
 
-  <div class="db-card">
-    <div class="db-card-header">
-      <div class="db-card-title">General Database</div>
-      <div class="db-card-stats" id="general-stats">Stats: no attempts yet</div>
-    </div>
-    <div id="general-list" class="word-list"></div>
+  <!-- NEW SORT DROPDOWN -->
+  <label style="font-size:0.85rem;color:#555;">Sort:
+    <select onchange="sortDB('teacher', this.value)">
+      <option value="recent">Most Recent</option>
+      <option value="grade">Best Grade</option>
+      <option value="length">Length (short→long)</option>
+    </select>
+  </label>
+
+  <div id="teacher-list" class="word-list"></div>
+</div>
+<div class="db-card">
+  <div class="db-card-header">
+    <div class="db-card-title">General Database</div>
+    <div class="db-card-stats" id="general-stats">Stats: no attempts yet</div>
   </div>
+
+  <!-- NEW SORT DROPDOWN -->
+  <label style="font-size:0.85rem;color:#555;">Sort:
+    <select onchange="sortDB('general', this.value)">
+      <option value="recent">Most Recent</option>
+      <option value="grade">Best Grade</option>
+      <option value="length">Length (short→long)</option>
+    </select>
+  </label>
+
+  <div id="general-list" class="word-list"></div>
+</div>
 
 </div>
 
@@ -1164,7 +1183,7 @@ window.addWord = function () {
   // take snapshot BEFORE changing the DB
   snapshotBeforeAdd();
   
-  const w = { he, tr, en, correct:0, wrong:0 };
+ const w = { he, tr, en, correct:0, wrong:0, created: Date.now() };
 
   if (dbChoice === "teacher") teacherDB.push(w);
   else generalDB.push(w);
@@ -1213,7 +1232,7 @@ window.bulkAdd = function () {
       en = parts.slice(2).join(", ");
     }
 
-    const w = { he, tr, en, correct:0, wrong:0 };
+    const w = { he, tr, en, correct:0, wrong:0, created: Date.now() };
 
     if (dbChoice === "teacher") teacherDB.push(w);
     else generalDB.push(w);
@@ -1222,16 +1241,40 @@ window.bulkAdd = function () {
   }
 
   saveLocalDB();
-if (currentUser) saveCloudDB(currentUser.uid);
+  if (currentUser) saveCloudDB(currentUser.uid);
 
-renderLists();
+  renderLists();
 
-document.getElementById("bulk-status").innerHTML =
-  `Added ${added} words.${skipped.length ? " Skipped lines: "+skipped.join(", ") : ""}`;
+  document.getElementById("bulk-status").innerHTML =
+    `Added ${added} words.${skipped.length ? " Skipped lines: " + skipped.join(", ") : ""}`;
 
-// NEW LINE – clears the textarea
-document.getElementById("bulk-input").value = "";
-}; 
+  // NEW LINE – clears the textarea
+  document.getElementById("bulk-input").value = "";
+};  // <--- CLOSES bulkAdd
+
+// ============================================================
+//   SORTING (Teacher / General)
+// ============================================================
+window.sortDB = function (dbName, mode) {
+  let db = (dbName === "teacher") ? teacherDB : generalDB;
+
+  if (mode === "recent") {
+    db.sort((a, b) => (b.created || 0) - (a.created || 0)); // newest first
+  } else if (mode === "grade") {
+    const score = w => (w.correct || 0) - (w.wrong || 0);
+    db.sort((a, b) => score(b) - score(a));
+  } else if (mode === "length") {
+    db.sort((a, b) => (a.he || "").length - (b.he || "").length);
+  }
+
+  if (dbName === "teacher") teacherDB = [...db];
+  else generalDB = [...db];
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+};
+  
 /* ============================================================
    FLASHCARDS
 ============================================================ */
