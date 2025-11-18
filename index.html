@@ -608,14 +608,17 @@
       <input id="english" placeholder="What do you like to do?" />
     </label>
 
-    <label>Save word to:
-      <select id="db-select">
-        <option value="teacher">Teacher Database</option>
-        <option value="general">General Database</option>
-      </select>
-    </label>
+<label>Save word to:
+  <select id="db-select">
+    <option value="teacher">Teacher Database</option>
+    <option value="general">General Database</option>
+  </select>
+</label>
 
-    <button onclick="addWord()">Add Word</button>
+<button onclick="addWord()">Add Word</button>
+<button onclick="undoLastAdd()" style="margin-left:0; margin-top:4px;">
+  Undo last add
+</button>
 
 <div class="db-row" style="margin-top:1.5rem;">
 
@@ -960,6 +963,9 @@ let teacherDB = [];
 let generalDB = [];
 let currentUser = null;
 
+// For undo (stores the state before the last add / bulk add)
+let lastAddSnapshot = null;
+
 const LOCAL_TEACHER = "teacher_db_v2";
 const LOCAL_GENERAL = "general_db_v2";
 
@@ -973,6 +979,36 @@ function saveLocalDB() {
   localStorage.setItem(LOCAL_GENERAL, JSON.stringify(generalDB));
 }
 
+// Save a copy of both DBs before we change them (for undo)
+function snapshotBeforeAdd() {
+  lastAddSnapshot = {
+    teacher: JSON.parse(JSON.stringify(teacherDB)),
+    general: JSON.parse(JSON.stringify(generalDB))
+  };
+}
+
+// Undo the most recent addWord / bulkAdd
+window.undoLastAdd = function () {
+  if (!lastAddSnapshot) {
+    alert("Nothing to undo.");
+    return;
+  }
+
+  // Restore previous state
+  teacherDB = lastAddSnapshot.teacher;
+  generalDB = lastAddSnapshot.general;
+
+  // Clear snapshot so we don't undo the same thing twice by accident
+  lastAddSnapshot = null;
+
+  // Save + refresh UI
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  alert("Last add has been undone.");
+};
+  
 async function loadCloudDB(uid) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
@@ -1123,6 +1159,9 @@ window.addWord = function () {
 
   if (!he || !en) return alert("Hebrew + English required.");
 
+  // take snapshot BEFORE changing the DB
+  snapshotBeforeAdd();
+  
   const w = { he, tr, en, correct:0, wrong:0 };
 
   if (dbChoice === "teacher") teacherDB.push(w);
@@ -1146,6 +1185,9 @@ window.bulkAdd = function () {
   const lines = textarea.value.trim().split(/\r?\n/);
   const dbChoice = document.getElementById("db-select").value;
 
+  // take snapshot BEFORE we start adding multiple words
+  snapshotBeforeAdd();
+  
   let added = 0;
   let skipped = [];
 
