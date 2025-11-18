@@ -767,13 +767,13 @@
 <!-- TYPING MODE -->
 <div id="ui-typing" class="arcade-ui" style="display:none;">
   <h3>⌨️ Typing Practice</h3>
-  <p>Type the translation of the prompt in Hebrew with vowels.</p>
+ <p>Type the translation of the prompt in Hebrew (vowels optional).</p>
 
   <button onclick="startTypingMode()">Begin Typing Practice</button>
 
   <div id="typing-prompt" style="margin-top:1.3rem; font-size:1.2rem;"></div>
 
-  <textarea id="typing-input" placeholder="Type Hebrew here with nikud..." style="margin-top:1.2rem;"></textarea>
+<textarea id="typing-input" placeholder="Type Hebrew here (vowels optional)..." style="margin-top:1.2rem;"></textarea>
   <button onclick="submitTypingAnswer()">Submit</button>
 
   <div id="typing-feedback" style="margin-top:1rem;"></div>
@@ -1222,24 +1222,23 @@ const arcadeUIs = {
   settings: "ui-settings"
 };
 
-arcadeTiles.forEach(tile=>{
-  tile.addEventListener("click", ()=>{
+arcadeTiles.forEach(tile => {
+  tile.addEventListener("click", () => {
     const tool = tile.dataset.tool;
     if (!tool) return;
 
-    arcadeOutput.innerHTML = ""; // clear old content
-
-    // hide all templates
-    document.querySelectorAll(".arcade-ui").forEach(ui=>{
+    // hide all tool panels
+    document.querySelectorAll(".arcade-ui").forEach(ui => {
       ui.style.display = "none";
     });
 
-    // show selected tool
+    // show the one we clicked (no DOM moving)
     const id = arcadeUIs[tool];
     const ui = document.getElementById(id);
     if (ui) {
-      arcadeOutput.appendChild(ui);
       ui.style.display = "block";
+      // optional: scroll down to the active tool
+      arcadeOutput.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
 });
@@ -1397,9 +1396,20 @@ window.generateRandomSentence = function () {
 };
 
 /* ============================================================
-   TYPING MODE (real practice)
+   TYPING MODE (real practice, vowels optional)
 ============================================================ */
 let typingCurrent = null;
+
+// Strip Hebrew nikud (vowels & cantillation) so we can compare
+// answers without requiring vowels.
+function stripNikud(str) {
+  if (!str) return "";
+  return str
+    .normalize("NFD")
+    .replace(/[\u0591-\u05C7]/g, "") // Hebrew combining marks
+    .normalize("NFC")
+    .trim();
+}
 
 window.startTypingMode = function () {
   const all = getAllWords();
@@ -1413,10 +1423,10 @@ window.startTypingMode = function () {
   }
 
   typingCurrent = all[Math.floor(Math.random() * all.length)];
-promptEl.innerHTML = `
-  Translate into Hebrew (with vowels):<br>
-  <strong>${typingCurrent.en}</strong>
-`;
+  promptEl.innerHTML = `
+    Translate into Hebrew (vowels optional):<br>
+    <strong>${typingCurrent.en}</strong>
+  `;
   inputEl.value = "";
   fbEl.innerText = "";
   inputEl.focus();
@@ -1431,19 +1441,23 @@ window.submitTypingAnswer = function () {
     return;
   }
 
-  const user = inputEl.value.trim();
-  const correct = typingCurrent.he.trim();
+  const userRaw = inputEl.value.trim();
+  const correctRaw = typingCurrent.he.trim();
 
-  if (!user) {
+  if (!userRaw) {
     fbEl.innerText = "Type your answer first.";
     return;
   }
+
+  // Compare both answers with vowels removed
+  const user = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
 
   if (user === correct) {
     fbEl.innerHTML = "✅ Correct!";
     typingCurrent.correct = (typingCurrent.correct || 0) + 1;
   } else {
-    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correct}</strong>`;
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
     typingCurrent.wrong = (typingCurrent.wrong || 0) + 1;
   }
 
