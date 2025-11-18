@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Hebrew Vocab Trainer + AI Tutor (Cloud Sync)</title>
+  <title>Hebrew Vocab Trainer + ChatGPT Helper</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -139,38 +139,6 @@
     .choice-btn:hover {
       background: #e0e7ff;
     }
-    .chat-box {
-      height: 260px;
-      overflow-y: auto;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-      border-radius: 12px;
-      margin-bottom: 10px;
-    }
-    .chat-msg-user {
-      text-align: right;
-      margin-bottom: 8px;
-      background: #dbeafe;
-      padding: 6px 8px;
-      border-radius: 10px;
-      display: inline-block;
-      max-width: 85%;
-      margin-left: auto;
-      white-space: pre-wrap;
-      box-shadow: 0 1px 3px rgba(15,23,42,0.2);
-    }
-    .chat-msg-ai {
-      text-align: left;
-      margin-bottom: 8px;
-      background: #fee2e2;
-      padding: 6px 8px;
-      border-radius: 10px;
-      display: inline-block;
-      max-width: 85%;
-      white-space: pre-wrap;
-      box-shadow: 0 1px 3px rgba(15,23,42,0.2);
-    }
     .auth-bar {
       background: linear-gradient(135deg, rgba(224,231,255,0.9), rgba(254,226,226,0.9));
       padding: 8px 10px;
@@ -202,7 +170,6 @@
       color: #111827;
       flex: 1 1 160px;
     }
-
     .manage-subtitle {
       font-size: 0.85rem;
       color: #6b7280;
@@ -318,32 +285,34 @@
     .delete-btn:hover {
       background: #dc2626;
     }
-    .hint {
-      font-size: 0.82rem;
-      color: #6b7280;
-      margin-top: -4px;
-      margin-bottom: 8px;
+    .export-box {
+      background: #f9fafb;
+      border-radius: 14px;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
     }
-
-    @media (max-width: 640px) {
-      main {
-        margin: 0.5rem;
-        padding: 0.9rem;
-      }
-      header h1 {
-        font-size: 1.1rem;
-      }
-      header small {
-        font-size: 0.75rem;
-      }
+    .export-box textarea {
+      background: transparent;
+      border-radius: 10px;
+      border: none;
+      resize: vertical;
+      min-height: 180px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.82rem;
+    }
+    .export-box textarea:focus {
+      outline: none;
+      box-shadow: none;
+      border: none;
     }
   </style>
 </head>
+
 <body>
 
 <header>
-  <h1>Hebrew Vocab Trainer + AI Tutor</h1>
-  <small>Two vocab databases, colorful stats, flashcards, and an AI tutor that knows your words.</small>
+  <h1>Hebrew Vocab Trainer + ChatGPT Helper</h1>
+  <small>Manage your words, practice flashcards, then send everything to ChatGPT for smart Hebrew tutoring.</small>
 </header>
 
 <main>
@@ -360,38 +329,36 @@
     <button id="auth-logout">Log out</button>
   </div>
 
-  <!-- Tab Buttons -->
   <div class="tab-bar">
     <span class="tab active" data-tab="manage">Manage Words</span>
     <span class="tab" data-tab="flash">Flashcards</span>
-    <span class="tab" data-tab="chat">AI Chat Tutor</span>
+    <span class="tab" data-tab="export">ChatGPT Helper</span>
   </div>
 
-  <!-- MANAGE WORDS TAB -->
+  <!-- MANAGE -->
   <div id="manage" class="tab-content active">
     <h2>Manage Your Hebrew Words</h2>
-    <div class="manage-subtitle">
-      Words are stored in your browser and synced to the cloud when you’re signed in.
-      Databases:
-      <span class="badge teacher">Teacher Database</span>
-      <span class="badge general">General Database</span>
-    </div>
+    <p class="manage-subtitle">
+      Words are synced locally and to the cloud when logged in.<br/>
+      Use:
+      <span class="badge teacher">Teacher</span>
+      <span class="badge general">General</span>
+      to keep vocab organized.
+    </p>
 
-    <label>
-      Hebrew (עברית)
-      <input id="hebrew" placeholder="e.g. מָה אַתָּה אוֹהֵב לַעֲשׂוֹת" />
+    <label>Hebrew (עברית)
+      <input id="hebrew" placeholder="מָה אַתָּה אוֹהֵב לַעֲשׂוֹת" />
     </label>
-    <label>
-      Transliteration (optional)
+
+    <label>Transliteration (optional)
       <input id="translit" placeholder="mah ata ohev la'asot" />
     </label>
-    <label>
-      English
+
+    <label>English
       <input id="english" placeholder="What do you like to do? (m)" />
     </label>
 
-    <label>
-      Target database
+    <label>Target database
       <select id="db-select">
         <option value="teacher">Teacher Database</option>
         <option value="general">General Database</option>
@@ -399,7 +366,7 @@
     </label>
 
     <button onclick="addWord()">Add Word</button>
-    <div class="hint">Tip: keep teacher words and “everything else” separate so you can practice them differently.</div>
+    <p class="hint">Tip: Use the teacher database for class words, general for everything else.</p>
 
     <div class="db-row">
       <div class="db-col">
@@ -411,6 +378,7 @@
           <div id="teacher-list" class="word-list"></div>
         </div>
       </div>
+
       <div class="db-col">
         <div class="db-inner">
           <div class="db-header">
@@ -421,27 +389,19 @@
         </div>
       </div>
     </div>
+
     <div id="overall-stats" class="overall-stats"></div>
 
-    <h3>Bulk import words (text)</h3>
-    <p style="font-size:0.82rem;color:#4b5563;margin-top:0;">
-      Paste many words at once. Current <strong>target database</strong> (above) will be used.<br/>
-      Formats (one entry per line):<br/>
-      <code>Hebrew, Transliteration, English</code><br/>
-      <code>Hebrew, English</code><br/>
-      You can also use semicolon or tab instead of commas.
-    </p>
-    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה נשמע, ma nishma, how are you&#10;תפוח, apple"></textarea>
+    <h3>Bulk Import</h3>
+    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה נשמע, ma nishma, how are you"></textarea>
     <button onclick="bulkAdd()">Bulk Add to Selected Database</button>
-    <div id="bulk-status" style="font-size:0.8rem; color:#555; margin-top:4px;"></div>
+    <div id="bulk-status" style="font-size:0.8rem;color:#555;"></div>
   </div>
-
-  <!-- FLASHCARDS TAB -->
+    <!-- FLASHCARDS TAB -->
   <div id="flash" class="tab-content">
     <h2>Flashcards & Practice</h2>
 
-    <label>
-      Mode
+    <label>Mode
       <select id="flash-mode">
         <option value="he-to-en">Front: Hebrew → Back: English + transliteration</option>
         <option value="en-to-he">Front: English → Back: Hebrew + transliteration</option>
@@ -467,16 +427,27 @@
     <div id="mcq-options" style="margin-top:6px;"></div>
   </div>
 
-  <!-- CHAT TUTOR TAB -->
-  <div id="chat" class="tab-content">
-    <h2>AI Hebrew Tutor (Groq)</h2>
+  <!-- CHATGPT HELPER TAB -->
+  <div id="export" class="tab-content">
+    <h2>ChatGPT Helper</h2>
+    <p style="font-size:0.85rem;color:#4b5563;">
+      This prepares a prompt for ChatGPT using all your saved words.<br/>
+      1) Click <strong>Refresh export</strong>.<br/>
+      2) Click <strong>Copy for ChatGPT</strong>.<br/>
+      3) Paste it into ChatGPT and say something like:<br/>
+      <em>“Quiz me strictly on this vocab in Hebrew. Give transliteration and mark anything slightly wrong as incorrect.”</em>
+    </p>
 
-    <input id="apiKey" type="password" placeholder="Groq API Key (gsk_...)" />
-    <div id="chat-area" class="chat-box"></div>
+    <div class="export-box">
+      <textarea id="export-text" readonly></textarea>
+    </div>
 
-    <textarea id="chat-input" placeholder="Ask for practice in Hebrew using your saved words..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <button style="flex:1 1 140px;" onclick="refreshExport()">Refresh export</button>
+      <button style="flex:1 1 140px;background:#22c55e;" onclick="copyExport()">Copy for ChatGPT</button>
+    </div>
 
-    <button onclick="sendChat()">Send</button>
+    <div id="export-status" style="font-size:0.8rem;color:#4b5563;margin-top:4px;"></div>
   </div>
 
 </main>
@@ -485,7 +456,6 @@
 /* -------------------------------
    FIREBASE SETUP
 --------------------------------*/
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getFirestore,
@@ -528,7 +498,7 @@ function loadLocalDB() {
   try {
     teacherDB = JSON.parse(localStorage.getItem(TEACHER_KEY) || "[]");
     generalDB = JSON.parse(localStorage.getItem(GENERAL_KEY) || "[]");
-  } catch (e) {
+  } catch {
     teacherDB = [];
     generalDB = [];
   }
@@ -566,7 +536,6 @@ async function syncOnLogin(uid) {
   const cloud = await fetchCloudDB(uid);
 
   if (!cloud) {
-    // no cloud doc yet
     teacherDB = localTeacher;
     generalDB = localGeneral;
     if (hadLocal) await saveCloudDB(uid);
@@ -666,6 +635,9 @@ function renderLists() {
     overallEl.textContent =
       `Teacher: 0 attempts · General: 0 attempts · Overall: 0 attempts · ${all.length} word${all.length === 1 ? "" : "s"} saved`;
   }
+
+  // Refresh ChatGPT export
+  refreshExport();
 }
 
 window.addWord = function () {
@@ -723,7 +695,6 @@ window.bulkAdd = function () {
     const raw = lines[i].trim();
     if (!raw) continue;
 
-    // allow comma, semicolon or tab as separators
     const parts = raw.split(/[,;\t]/).map(p => p.trim()).filter(Boolean);
 
     if (parts.length < 2) {
@@ -772,7 +743,7 @@ window.bulkAdd = function () {
 };
 
 /* -------------------------------
-   FLASHCARDS (with transliteration on flip)
+   FLASHCARDS
 --------------------------------*/
 let currentCard = null;
 let currentCardIsFront = true;
@@ -875,69 +846,64 @@ window.checkMCQ = function (chosen, correct) {
 };
 
 /* -------------------------------
-   CHAT WITH GROQ API
+   CHATGPT EXPORT
 --------------------------------*/
-let chatHistory = [];
+function buildExportText() {
+  const all = getAllWords();
+  if (all.length === 0) {
+    return "I don't have any words saved yet. Please ignore this and ask me to add some Hebrew vocabulary first.";
+  }
 
-function addChat(role, text) {
-  let area = document.getElementById("chat-area");
-  let div = document.createElement("div");
-  div.className = role === "user" ? "chat-msg-user" : "chat-msg-ai";
-  div.innerText = text;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
+  let lines = [];
+  lines.push("Here is my current Hebrew vocabulary list. Please use ONLY these words to quiz me.");
+  lines.push("Rules:");
+  lines.push("1. Ask questions mostly in Hebrew.");
+  lines.push("2. Always show transliteration in Latin letters.");
+  lines.push("3. Be strict: if I get anything even slightly wrong, mark it incorrect and then show the correct answer.");
+  lines.push("4. Mix teacher words and general words.");
+  lines.push("");
+  if (teacherDB.length > 0) {
+    lines.push("Teacher Database Words:");
+    teacherDB.forEach(w => {
+      const tr = w.tr ? ` (${w.tr})` : "";
+      lines.push(`- ${w.he}${tr} = ${w.en}`);
+    });
+    lines.push("");
+  }
+  if (generalDB.length > 0) {
+    lines.push("General Database Words:");
+    generalDB.forEach(w => {
+      const tr = w.tr ? ` (${w.tr})` : "";
+      lines.push(`- ${w.he}${tr} = ${w.en}`);
+    });
+    lines.push("");
+  }
+
+  lines.push("You can start by asking me to translate or respond to short sentences using these words.");
+
+  return lines.join("\n");
 }
 
-window.sendChat = async function () {
-  let apiKey = document.getElementById("apiKey").value.trim();
-  if (!apiKey) return alert("Enter your Groq API key");
+window.refreshExport = function () {
+  const ta = document.getElementById("export-text");
+  if (!ta) return;
+  ta.value = buildExportText();
+  const status = document.getElementById("export-status");
+  if (status) {
+    status.textContent = "Export updated. Now click “Copy for ChatGPT” and paste it into ChatGPT.";
+  }
+};
 
-  let msg = document.getElementById("chat-input").value.trim();
-  if (!msg) return;
-
-  addChat("user", msg);
-  document.getElementById("chat-input").value = "";
-
-  chatHistory.push({ role: "user", content: msg });
-
-  let vocab = getAllWords()
-    .map(w => `${w.he} (${w.tr || ""}) = ${w.en}`)
-    .join("\n");
-
-  let system = {
-    role: "system",
-    content:
-      "You are a strict but friendly Hebrew tutor for a motivated law student. " +
-      "Use ONLY the provided vocabulary list as the primary practice set:\n" +
-      vocab +
-      "\nAlways: (1) correct Hebrew spelling with nikud if relevant, " +
-      "(2) provide transliteration, (3) give short explanations in English, " +
-      "(4) ask comprehension or production questions using these words."
-  };
-
-  let messages = [system, ...chatHistory];
-
+window.copyExport = async function () {
+  const ta = document.getElementById("export-text");
+  const status = document.getElementById("export-status");
+  if (!ta) return;
+  ta.select();
   try {
-    let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + apiKey
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages
-      })
-    });
-
-    let data = await response.json();
-    let text = data.choices?.[0]?.message?.content || "Error: no response.";
-
-    addChat("ai", text);
-    chatHistory.push({ role: "assistant", content: text });
-
-  } catch (e) {
-    addChat("ai", "Error: " + e.message);
+    await navigator.clipboard.writeText(ta.value);
+    if (status) status.textContent = "Copied! Go to ChatGPT, paste, and start practicing 😊";
+  } catch {
+    if (status) status.textContent = "Copy failed. You can select the text and copy it manually.";
   }
 };
 
@@ -994,6 +960,7 @@ onAuthStateChanged(auth, async (user) => {
 loadLocalDB();
 renderLists();
 newCard();
+refreshExport();
 
 /* -------------------------------
    TABS
