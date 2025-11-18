@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hebrew Vocab Trainer + AI Tutor (Cloud Sync)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f0f0f0;
+    }
+    header {
+      background: #2b2d42;
+      color: white;
+      padding: 1rem;
+    }
+    main {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 1rem;
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 3px 7px rgba(0,0,0,0.2);
+    }
+    .tab {
+      display: inline-block;
+      padding: 8px 14px;
+      margin: 3px;
+      border-radius: 6px;
+      background: #e0e0e0;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: #2b2d42;
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      margin-top: 1rem;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #999;
+      box-sizing: border-box;
+    }
+    button {
+      background: #2b2d42;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1f2030;
+    }
+    .flashcard {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      background: #fafafa;
+      min-height: 50px;
+    }
+    .choice-btn {
+      width: 100%;
+      margin-top: 5px;
+      padding: 10px;
+      border-radius: 6px;
+      background: #efefef;
+      border: 1px solid #bbb;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .choice-btn:hover {
+      background: #ddd;
+    }
+    .chat-box {
+      height: 250px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .chat-msg-user {
+      text-align: right;
+      margin-bottom: 8px;
+      background: #d7e3ff;
+      padding: 6px;
+      border-radius: 6px;
+    }
+    .chat-msg-ai {
+      text-align: left;
+      margin-bottom: 8px;
+      background: #ffe5e5;
+      padding: 6px;
+      border-radius: 6px;
+    }
+    .auth-bar {
+      background: #edf2ff;
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .auth-bar input {
+      width: auto;
+      min-width: 140px;
+      flex: 1 1 140px;
+      margin: 0;
+    }
+    .auth-bar button {
+      width: auto;
+      padding: 6px 10px;
+      margin: 0;
+      font-size: 0.85rem;
+    }
+    .auth-status {
+      font-size: 0.8rem;
+      color: #333;
+      flex: 1 1 140px;
+    }
+    @media (max-width: 600px) {
+      .auth-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .auth-bar input, .auth-bar button, .auth-status {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Hebrew Vocab Trainer + AI Tutor (Cloud Sync)</h1>
+</header>
+
+<main>
+
+  <!-- AUTH BAR -->
+  <div class="auth-bar">
+    <div class="auth-status">
+      <strong>Status:</strong> <span id="auth-status-text">Not signed in (local only)</span>
+    </div>
+    <input id="auth-email" type="email" placeholder="Email" />
+    <input id="auth-password" type="password" placeholder="Password" />
+    <button id="auth-signup">Sign up</button>
+    <button id="auth-login">Log in</button>
+    <button id="auth-logout">Log out</button>
+  </div>
+
+  <!-- Tab Buttons -->
+  <div>
+    <span class="tab active" data-tab="manage">Manage Words</span>
+    <span class="tab" data-tab="flash">Flashcards</span>
+    <span class="tab" data-tab="chat">AI Chat Tutor</span>
+  </div>
+
+  <!-- MANAGE WORDS TAB -->
+  <div id="manage" class="tab-content active">
+    <h2>Add Word</h2>
+    <input id="hebrew" placeholder="Hebrew" />
+    <input id="translit" placeholder="Transliteration" />
+    <input id="english" placeholder="English" />
+
+    <select id="db-select">
+      <option value="teacher">Teacher Database</option>
+      <option value="general">General Database</option>
+    </select>
+
+    <button onclick="addWord()">Add Word</button>
+
+    <h3>Teacher Words</h3>
+    <div id="teacher-list"></div>
+
+    <h3>General Words</h3>
+    <div id="general-list"></div>
+  </div>
+
+  <!-- FLASHCARDS TAB -->
+  <div id="flash" class="tab-content">
+    <h2>Flashcards</h2>
+
+    <select id="flash-mode">
+      <option value="he-to-en">Hebrew → English</option>
+      <option value="en-to-he">English → Hebrew</option>
+    </select>
+
+    <button onclick="newCard()">New Card</button>
+
+    <div id="flashcard" class="flashcard">
+      Click "New Card" to start
+    </div>
+
+    <button onclick="flipCard()">Flip</button>
+    <button onclick="markRight()">I got it right</button>
+    <button onclick="markWrong()">I got it wrong</button>
+
+    <h2>Multiple Choice</h2>
+    <button onclick="newMCQ()">New Question</button>
+
+    <div id="mcq-question" class="flashcard"></div>
+    <div id="mcq-options"></div>
+  </div>
+
+  <!-- CHAT TUTOR TAB -->
+  <div id="chat" class="tab-content">
+    <h2>AI Hebrew Tutor (Groq)</h2>
+
+    <input id="apiKey" type="password" placeholder="Groq API Key (gsk_...)" />
+    <div id="chat-area" class="chat-box"></div>
+
+    <textarea id="chat-input" placeholder="Type your message..."></textarea>
+
+    <button onclick="sendChat()">Send</button>
+  </div>
+
+</main>
+
+<script type="module">
+/* -------------------------------
+   FIREBASE SETUP
+--------------------------------*/
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+// ⭐⭐⭐ REPLACE THIS WITH YOUR FIREBASE VALUES ⭐⭐⭐
+const firebaseConfig = {
+  apiKey: "AIzaSyDWXr9Ugag1WhzHBak7AaMiN94EQ9UXls4",
+  authDomain: "hebrew-vocab-fae49.firebaseapp.com",
+  projectId: "hebrew-vocab-fae49",
+  storageBucket: "hebrew-vocab-fae49.firebasestorage.app",
+  messagingSenderId: "507243746832",
+  appId: "1:507243746832:web:b0ac2574063fd89dc7dc95"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* -------------------------------
+   DATABASE (LOCAL + CLOUD)
+--------------------------------*/
+let teacherDB = [];
+let generalDB = [];
+let currentUser = null;
+
+const TEACHER_KEY = "hebrew_teacher_local_v1";
+const GENERAL_KEY = "hebrew_general_local_v1";
+
+function loadLocalDB() {
+  try {
+    teacherDB = JSON.parse(localStorage.getItem(TEACHER_KEY) || "[]");
+    generalDB = JSON.parse(localStorage.getItem(GENERAL_KEY) || "[]");
+  } catch (e) {
+    teacherDB = [];
+    generalDB = [];
+  }
+}
+
+function saveLocalDB() {
+  localStorage.setItem(TEACHER_KEY, JSON.stringify(teacherDB));
+  localStorage.setItem(GENERAL_KEY, JSON.stringify(generalDB));
+}
+
+async function loadCloudDB(uid) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const data = snap.data();
+    teacherDB = data.teacherDB || [];
+    generalDB = data.generalDB || [];
+  }
+}
+
+async function saveCloudDB(uid) {
+  const ref = doc(db, "users", uid);
+  await setDoc(ref, { teacherDB, generalDB }, { merge: true });
+}
+
+function saveAllDB() {
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+}
+
+/* -------------------------------
+   WORD MANAGEMENT
+--------------------------------*/
+function renderLists() {
+  document.getElementById("teacher-list").innerHTML =
+    teacherDB.map(w => `<div>${w.he} — ${w.en} (✔️${w.correct||0}/✖️${w.wrong||0})</div>`).join("");
+
+  document.getElementById("general-list").innerHTML =
+    generalDB.map(w => `<div>${w.he} — ${w.en} (✔️${w.correct||0}/✖️${w.wrong||0})</div>`).join("");
+}
+
+window.addWord = function () {
+  let he = document.getElementById("hebrew").value.trim();
+  let tr = document.getElementById("translit").value.trim();
+  let en = document.getElementById("english").value.trim();
+  let dbSel = document.getElementById("db-select").value;
+
+  if (!he || !en) return alert("Need Hebrew + English");
+
+  let obj = { he, tr, en, correct: 0, wrong: 0 };
+
+  if (dbSel === "teacher") teacherDB.push(obj);
+  else generalDB.push(obj);
+
+  saveAllDB();
+  renderLists();
+
+  document.getElementById("hebrew").value = "";
+  document.getElementById("translit").value = "";
+  document.getElementById("english").value = "";
+};
+
+/* -------------------------------
+   FLASHCARDS
+--------------------------------*/
+let currentCard = null;
+
+window.newCard = function () {
+  let all = [...teacherDB, ...generalDB];
+  let flashDiv = document.getElementById("flashcard");
+
+  if (all.length === 0) {
+    flashDiv.innerText = "No words!";
+    currentCard = null;
+    return;
+  }
+
+  currentCard = all[Math.floor(Math.random() * all.length)];
+  let mode = document.getElementById("flash-mode").value;
+
+  flashDiv.innerText = (mode === "he-to-en") ? currentCard.he : currentCard.en;
+};
+
+window.flipCard = function () {
+  if (!currentCard) return;
+  let mode = document.getElementById("flash-mode").value;
+  let flashDiv = document.getElementById("flashcard");
+
+  flashDiv.innerText =
+    (mode === "he-to-en")
+      ? (flashDiv.innerText === currentCard.he ? currentCard.en : currentCard.he)
+      : (flashDiv.innerText === currentCard.en ? currentCard.he : currentCard.en);
+};
+
+window.markRight = function () {
+  if (!currentCard) return;
+  currentCard.correct = (currentCard.correct || 0) + 1;
+  saveAllDB();
+  newCard();
+};
+
+window.markWrong = function () {
+  if (!currentCard) return;
+  currentCard.wrong = (currentCard.wrong || 0) + 1;
+  saveAllDB();
+  newCard();
+};
+
+/* -------------------------------
+   MULTIPLE CHOICE
+--------------------------------*/
+window.newMCQ = function () {
+  let all = [...teacherDB, ...generalDB];
+  let qDiv = document.getElementById("mcq-question");
+  let optDiv = document.getElementById("mcq-options");
+
+  if (all.length < 2) {
+    qDiv.innerText = "Need 2+ words!";
+    optDiv.innerHTML = "";
+    return;
+  }
+
+  let correct = all[Math.floor(Math.random() * all.length)];
+  let choices = [correct];
+
+  while (choices.length < 4 && choices.length < all.length) {
+    let c = all[Math.floor(Math.random() * all.length)];
+    if (!choices.includes(c)) choices.push(c);
+  }
+
+  qDiv.innerText = correct.he;
+  optDiv.innerHTML = choices
+    .map(c => `<button class="choice-btn" onclick="checkMCQ('${c.en}','${correct.en}')">${c.en}</button>`)
+    .join("");
+};
+
+window.checkMCQ = function (chosen, correct) {
+  alert(chosen === correct ? "Correct!" : "Wrong! Correct: " + correct);
+};
+
+/* -------------------------------
+   CHAT WITH GROQ API
+--------------------------------*/
+let chatHistory = [];
+
+function addChat(role, text) {
+  let area = document.getElementById("chat-area");
+  let div = document.createElement("div");
+  div.className = role === "user" ? "chat-msg-user" : "chat-msg-ai";
+  div.innerText = text;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+window.sendChat = async function () {
+  let apiKey = document.getElementById("apiKey").value.trim();
+  if (!apiKey) return alert("Enter your Groq API key");
+
+  let msg = document.getElementById("chat-input").value.trim();
+  if (!msg) return;
+
+  addChat("user", msg);
+  document.getElementById("chat-input").value = "";
+
+  chatHistory.push({ role: "user", content: msg });
+
+  let vocab = [...teacherDB, ...generalDB]
+    .map(w => `${w.he} (${w.tr||""}) = ${w.en}`)
+    .join("\n");
+
+  let system = {
+    role: "system",
+    content:
+      "You are a Hebrew tutor. Use these words:\n" + vocab +
+      "\nCorrect Hebrew spelling, give transliterations, quiz the user."
+  };
+
+  let messages = [system, ...chatHistory];
+
+  try {
+    let response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + apiKey
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages
+      })
+    });
+
+    let data = await response.json();
+    let text = data.choices?.[0]?.message?.content || "Error: no response.";
+
+    addChat("ai", text);
+    chatHistory.push({ role: "assistant", content: text });
+
+  } catch (e) {
+    addChat("ai", "Error: " + e.message);
+  }
+};
+
+/* -------------------------------
+   AUTHENTICATION UI
+--------------------------------*/
+const statusEl = document.getElementById("auth-status-text");
+
+document.getElementById("auth-signup").onclick = async () => {
+  try {
+    let email = document.getElementById("auth-email").value;
+    let pass = document.getElementById("auth-password").value;
+    await createUserWithEmailAndPassword(auth, email, pass);
+    alert("Signed up!");
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+};
+
+document.getElementById("auth-login").onclick = async () => {
+  try {
+    let email = document.getElementById("auth-email").value;
+    let pass = document.getElementById("auth-password").value;
+    await signInWithEmailAndPassword(auth, email, pass);
+    alert("Logged in!");
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+};
+
+document.getElementById("auth-logout").onclick = async () => {
+  await signOut(auth);
+};
+
+/* -------------------------------
+   AUTH STATE LISTENER
+--------------------------------*/
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user) {
+    statusEl.textContent = "Signed in as " + user.email;
+    loadLocalDB();
+    await loadCloudDB(user.uid);
+    saveLocalDB();
+  } else {
+    statusEl.textContent = "Not signed in (local only)";
+    loadLocalDB();
+  }
+  renderLists();
+  newCard();
+});
+
+/* -------------------------------
+   INITIAL LOAD
+--------------------------------*/
+loadLocalDB();
+renderLists();
+newCard();
+
+/* -------------------------------
+   TABS
+--------------------------------*/
+document.querySelectorAll(".tab").forEach(el => {
+  el.onclick = () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    el.classList.add("active");
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    document.getElementById(el.dataset.tab).classList.add("active");
+  };
+});
+
+</script>
+
+</body>
+</html>
