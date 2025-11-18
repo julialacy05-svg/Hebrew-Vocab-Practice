@@ -2,392 +2,392 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Hebrew Vocab Trainer + Gemini Tutor</title>
+  <title>Hebrew Vocab Trainer + AI Tutor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Google Font: Assistant -->
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
   <style>
+    /* =========================================
+       GLOBAL ROOT COLORS + VARIABLES
+    ========================================== */
     :root {
-      --teacher-color: #6366f1;
-      --general-color: #fb923c;
-      --accent-pink: #ec4899;
-      --accent-green: #22c55e;
-      --bg-soft: #f5f5ff;
+      --font-main: "Assistant", sans-serif;
+
+      /* Core Colors */
+      --purple: #6c63ff;
+      --pink: #ff6fb7;
+      --blue: #4fa3ff;
+      --green: #3bc67d;
+      --yellow: #ffd95e;
+      --orange: #ff9f40;
+      --red: #ff6f6f;
+
+      /* Soft Pastels */
+      --pastel-red: #ffe5e5;
+      --pastel-blue: #e4f1ff;
+      --pastel-green: #e5ffef;
+      --pastel-purple: #f1eaff;
+      --pastel-yellow: #fff8dc;
+      --pastel-orange: #ffeede;
+
+      /* Text */
+      --text-dark: #1f1f1f;
+      --text-medium: #4b4b4b;
+      --text-light: #6f6f6f;
+
+      /* Cards */
+      --card-bg: #ffffff;
+      --card-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+      /* Soft Motion */
+      --transition-fast: 0.18s ease;
+      --transition-medium: 0.35s ease;
     }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    /* =========================================
+       GLOBAL RESETS
+    ========================================== */
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      background: radial-gradient(circle at top left, #e0f2fe, #f5f3ff 40%, #fef2f2);
-      color: #111827;
     }
+
+    body {
+      font-family: var(--font-main);
+      background: linear-gradient(
+        135deg,
+        #f5f5ff,
+        #f0f7ff,
+        #fff5f7
+      );
+      background-size: 140% 140%;
+      animation: softBackground 14s ease-in-out infinite;
+      padding-bottom: 50px;
+      color: var(--text-dark);
+    }
+
+    @keyframes softBackground {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 70%; }
+      100% { background-position: 0% 0%; }
+    }
+
+    /* =========================================
+       HEADER
+    ========================================== */
     header {
-      background: linear-gradient(90deg, #4f46e5, #ec4899);
+      background: linear-gradient(90deg, var(--purple), var(--pink));
       color: white;
-      padding: 1.1rem 1.5rem;
-      box-shadow: 0 6px 20px rgba(15,23,42,0.4);
+      padding: 1.3rem 1.5rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
       position: sticky;
       top: 0;
       z-index: 10;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      animation: headerFade var(--transition-medium);
     }
+
+    @keyframes headerFade {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     header h1 {
-      margin: 0;
-      font-size: 1.3rem;
+      font-size: 1.6rem;
       font-weight: 600;
+      margin-bottom: 0.3rem;
     }
+
     header small {
-      display: block;
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       opacity: 0.85;
-      margin-top: 0.15rem;
     }
+
+    /* =========================================
+       MAIN CONTAINER
+    ========================================== */
     main {
-      max-width: 960px;
-      margin: 1rem auto 2.5rem;
-      background: rgba(255,255,255,0.98);
-      padding: 1.25rem;
-      border-radius: 20px;
-      box-shadow: 0 14px 40px rgba(15,23,42,0.25);
-      backdrop-filter: blur(10px);
+      max-width: 1000px;
+      margin: 1rem auto 2rem;
+      background: rgba(255,255,255,0.88);
+      border-radius: 24px;
+      padding: 1.4rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+      backdrop-filter: blur(8px);
+      animation: fadeInUp var(--transition-medium);
     }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =========================================
+       TAB BAR
+    ========================================== */
     .tab-bar {
-      margin-bottom: 0.75rem;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      animation: fadeIn var(--transition-medium);
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     .tab {
-      display: inline-block;
-      padding: 8px 16px;
-      margin: 0 4px 4px 0;
-      border-radius: 999px;
-      background: #e5e7eb;
+      background: #ececff;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 600;
       cursor: pointer;
-      font-size: 0.85rem;
-      border: 1px solid transparent;
-      user-select: none;
+      transition: var(--transition-fast);
+      color: var(--purple);
+      border: 2px solid transparent;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
+
+    .tab:hover {
+      background: #dedcff;
+      transform: translateY(-2px);
+    }
+
     .tab.active {
-      background: #111827;
+      background: var(--purple);
       color: white;
-      border-color: #111827;
+      border-color: var(--purple);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(108,99,255,0.4);
     }
+
+    /* =========================================
+       TAB CONTENT
+    ========================================== */
     .tab-content {
       display: none;
-      margin-top: 0.75rem;
+      animation: fadeInTab var(--transition-medium);
     }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .tab-content.active {
       display: block;
     }
+
+    /* =========================================
+       INPUT FIELDS + BUTTONS
+    ========================================== */
     input, textarea, select, button {
       width: 100%;
-      padding: 9px 10px;
-      margin-top: 6px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      box-sizing: border-box;
-      font-size: 0.9rem;
-      font-family: inherit;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #d0d0e7;
+      margin: 8px 0 12px;
+      font-size: 1rem;
+      transition: var(--transition-fast);
+      font-family: var(--font-main);
     }
-    label {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #374151;
-      display: block;
-      margin-top: 4px;
-    }
+
     input:focus, textarea:focus, select:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 1px #4f46e5;
-      background: #f9fafb;
     }
+
     button {
-      background: #4f46e5;
+      background: var(--purple);
       color: white;
+      font-weight: 600;
       cursor: pointer;
-      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(108,99,255,0.35);
       border: none;
-      transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
-      box-shadow: 0 4px 10px rgba(79,70,229,0.35);
+      transition: var(--transition-fast);
     }
+
     button:hover {
-      background: #4338ca;
-      box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+      background: #584ee3;
+      transform: translateY(-2px);
     }
+
     button:active {
-      transform: scale(0.98);
-      box-shadow: 0 3px 8px rgba(79,70,229,0.35);
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(108,99,255,0.2);
     }
 
-    .auth-bar {
-      background: linear-gradient(135deg, rgba(224,231,255,0.9), rgba(254,226,226,0.9));
-      padding: 8px 10px;
-      border-radius: 16px;
-      margin-bottom: 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-      font-size: 0.8rem;
-    }
-    .auth-bar input {
-      width: auto;
-      min-width: 140px;
-      flex: 1 1 140px;
-      margin: 0;
-      font-size: 0.8rem;
-      padding: 6px 8px;
-      background: rgba(255,255,255,0.9);
-    }
-    .auth-bar button {
-      width: auto;
-      padding: 6px 10px;
-      margin: 0;
-      font-size: 0.8rem;
-    }
-    .auth-status {
-      font-size: 0.8rem;
-      color: #111827;
-      flex: 1 1 160px;
+    /* =========================================
+       PRACTICE ARCADE — TILE GRID
+    ========================================== */
+    .arcade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 18px;
+      margin-bottom: 2rem;
+      margin-top: 1rem;
     }
 
-    .manage-subtitle {
-      font-size: 0.85rem;
-      color: #6b7280;
-      margin-bottom: 6px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      margin-right: 4px;
-    }
-    .badge.teacher {
-      background: #e0e7ff;
-      color: #3730a3;
-    }
-    .badge.general {
-      background: #ffedd5;
-      color: #9a3412;
-    }
-    .db-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 10px;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
-    .db-col {
-      flex: 1 1 260px;
-      background: linear-gradient(135deg, #eef2ff, #fef3c7);
-      padding: 2px;
-      border-radius: 18px;
-    }
-    .db-inner {
+    .arcade-tile {
       background: white;
-      border-radius: 16px;
-      padding: 8px 10px;
-      min-height: 80px;
-    }
-    .db-inner.empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
-      color: #9ca3af;
-    }
-    .db-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 6px;
-    }
-    .db-header-title {
-      font-size: 0.9rem;
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
       font-weight: 600;
-    }
-    .db-header-title.teacher {
-      color: var(--teacher-color);
-    }
-    .db-header-title.general {
-      color: var(--general-color);
-    }
-    .db-stats {
-      font-size: 0.8rem;
-      color: #6b7280;
-    }
-    .overall-stats {
-      margin-top: 4px;
-      font-size: 0.8rem;
-      color: #4b5563;
-      text-align: left;
-    }
-    .word-list {
-      max-height: 230px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-    .word-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 6px 0;
-      border-bottom: 1px dashed #e5e7eb;
-      font-size: 0.9rem;
-    }
-    .word-main {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    .word-he {
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-    .word-en {
-      font-size: 0.9rem;
-      color: #374151;
-    }
-    .word-tr {
-      font-size: 0.8rem;
-      color: #6b7280;
-    }
-    .delete-btn {
-      flex: 0 0 auto;
-      width: auto;
-      padding: 4px 10px;
-      background: #ef4444;
-      color: white;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      box-shadow: 0 3px 8px rgba(248,113,113,0.6);
-    }
-    .delete-btn:hover {
-      background: #dc2626;
-    }
-    .hint {
-      font-size: 0.8rem;
-      color: #6b7280;
-      margin-top: -4px;
-      margin-bottom: 8px;
+      font-size: 1.05rem;
+      box-shadow: var(--card-shadow);
+      transition: var(--transition-medium);
+      cursor: pointer;
+      border: 2px solid transparent;
     }
 
-    /* FLASHCARD with flip animation */
-    .flashcard {
+    .arcade-tile:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    }
+
+    .tile-red { background: var(--pastel-red); color: var(--red); }
+    .tile-blue { background: var(--pastel-blue); color: var(--blue); }
+    .tile-green { background: var(--pastel-green); color: var(--green); }
+    .tile-yellow { background: var(--pastel-yellow); color: var(--yellow); }
+    .tile-orange { background: var(--pastel-orange); color: var(--orange); }
+    .tile-purple { background: var(--pastel-purple); color: var(--purple); }
+
+    /* =========================================
+       ADVANCED TOOLS SECTION
+    ========================================== */
+    .advanced-section {
+      margin-top: 1rem;
+    }
+
+    .advanced-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--text-medium);
+    }
+
+    .advanced-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+    }
+
+    .advanced-item {
+      background: #fafaff;
       border-radius: 16px;
-      padding: 0;
-      background: transparent;
-      min-height: 80px;
+      border-left: 5px solid var(--purple);
+      padding: 14px;
+      box-shadow: var(--card-shadow);
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .advanced-item:hover {
+      transform: translateY(-3px);
+      background: #f2f2ff;
+    }
+
+    /* =========================================
+       FLASHCARD EFFECT
+    ========================================== */
+    .flashcard {
       perspective: 1000px;
     }
+
     .flashcard-inner {
       position: relative;
       width: 100%;
-      min-height: 80px;
-      transition: transform 0.6s;
+      min-height: 120px;
       transform-style: preserve-3d;
+      transition: transform var(--transition-medium);
     }
+
     .flashcard.flipped .flashcard-inner {
       transform: rotateY(180deg);
     }
+
     .flashcard-face {
       position: absolute;
       width: 100%;
-      min-height: 80px;
+      height: 100%;
       backface-visibility: hidden;
       border-radius: 16px;
-      box-shadow: inset 0 0 0 1px #e5e7eb;
-      background: radial-gradient(circle at top, #e0f2fe, #f9fafb 55%);
+      padding: 20px;
+      box-shadow: var(--card-shadow);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
-      box-sizing: border-box;
-      font-size: 1.1rem;
-      text-align: center;
+      font-size: 1.25rem;
+      background: white;
     }
-    .flashcard-front {
-      transform: rotateY(0deg);
-    }
+
     .flashcard-back {
       transform: rotateY(180deg);
     }
 
-    /* Chat styles for AI Tutor */
+    /* =========================================
+       CHAT (AI TUTOR)
+    ========================================== */
     .chat-box {
-      height: 260px;
+      height: 300px;
       overflow-y: auto;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-      border-radius: 12px;
-      margin-bottom: 10px;
+      padding: 12px;
+      background: #fafafa;
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 12px;
     }
+
     .chat-msg-user {
       text-align: right;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
-    .chat-msg-user span {
-      display: inline-block;
-      background: #dbeafe;
-      padding: 6px 9px;
-      border-radius: 12px;
-      max-width: 80%;
-      font-size: 0.9rem;
-    }
+
     .chat-msg-ai {
       text-align: left;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
+
+    .chat-msg-user span,
     .chat-msg-ai span {
       display: inline-block;
-      background: #fee2e2;
-      padding: 6px 9px;
-      border-radius: 12px;
-      max-width: 80%;
-      font-size: 0.9rem;
-    }
-
-    /* Export / AI boxes */
-    .export-box {
-      background: #f9fafb;
+      padding: 10px 14px;
       border-radius: 14px;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-    }
-    .export-box textarea {
-      background: transparent;
-      border-radius: 10px;
-      border: none;
-      resize: vertical;
-      min-height: 180px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.82rem;
-    }
-    .export-box textarea:focus {
-      outline: none;
-      box-shadow: none;
-      border: none;
+      max-width: 80%;
+      font-size: 0.95rem;
+      box-shadow: var(--card-shadow);
     }
 
-    @media (max-width: 640px) {
-      main {
-        margin: 0.5rem;
-        padding: 0.9rem;
-      }
-      header h1 {
-        font-size: 1.1rem;
-      }
-      header small {
-        font-size: 0.75rem;
-      }
+    .chat-msg-user span {
+      background: var(--pastel-purple);
+      color: var(--purple);
     }
+
+    .chat-msg-ai span {
+      background: var(--pastel-orange);
+      color: var(--orange);
+    }
+
   </style>
 </head>
 
+  
 <body>
 
 <header>
-  <h1>Hebrew Vocab Trainer + Gemini Tutor</h1>
-  <small>Manage your words, practice flashcards, and chat with an AI Hebrew tutor directly inside the site.</small>
+  <h1>Hebrew Vocab Trainer + AI Tutor</h1>
+  <small>Your personalized Hebrew learning platform</small>
 </header>
 
 <main>
@@ -404,24 +404,19 @@
     <button id="auth-logout">Log out</button>
   </div>
 
+  <!-- TABS -->
   <div class="tab-bar">
     <span class="tab active" data-tab="manage">Manage Words</span>
     <span class="tab" data-tab="flash">Flashcards</span>
     <span class="tab" data-tab="ai">AI Tutor (Gemini)</span>
+    <span class="tab" data-tab="arcade">Practice Arcade 🎯</span>
   </div>
 
-  <!-- MANAGE TAB -->
+  <!-- TAB CONTENT: MANAGE WORDS -->
   <div id="manage" class="tab-content active">
     <h2>Manage Your Hebrew Words</h2>
-    <p class="manage-subtitle">
-      Words are synced locally and to the cloud when logged in.<br/>
-      Use:
-      <span class="badge teacher">Teacher</span>
-      <span class="badge general">General</span>
-      to keep vocab organized.
-    </p>
 
-    <label>Hebrew (עברית)
+    <label>Hebrew (with vowels if possible)
       <input id="hebrew" placeholder="מָה אַתָּה אוֹהֵב לַעֲשׂוֹת" />
     </label>
 
@@ -429,11 +424,11 @@
       <input id="translit" placeholder="mah ata ohev la'asot" />
     </label>
 
-    <label>English
-      <input id="english" placeholder="What do you like to do? (m)" />
+    <label>English Meaning
+      <input id="english" placeholder="What do you like to do?" />
     </label>
 
-    <label>Target database
+    <label>Save word to:
       <select id="db-select">
         <option value="teacher">Teacher Database</option>
         <option value="general">General Database</option>
@@ -441,115 +436,314 @@
     </label>
 
     <button onclick="addWord()">Add Word</button>
-    <p class="hint">Tip: Use the teacher database for class words, general for everything else.</p>
 
-    <div class="db-row">
-      <div class="db-col">
-        <div class="db-inner">
-          <div class="db-header">
-            <span class="db-header-title teacher">Teacher Database</span>
-            <span id="teacher-stats" class="db-stats">Stats: no attempts yet</span>
-          </div>
-          <div id="teacher-list" class="word-list"></div>
-        </div>
-      </div>
+    <h3 style="margin-top:1.2rem;">Teacher Database</h3>
+    <div id="teacher-list"></div>
 
-      <div class="db-col">
-        <div class="db-inner">
-          <div class="db-header">
-            <span class="db-header-title general">General Database</span>
-            <span id="general-stats" class="db-stats">Stats: no attempts yet</span>
-          </div>
-          <div id="general-list" class="word-list"></div>
-        </div>
-      </div>
-    </div>
+    <h3 style="margin-top:1.2rem;">General Database</h3>
+    <div id="general-list"></div>
 
-    <div id="overall-stats" class="overall-stats"></div>
+    <div id="overall-stats" class="overall-stats" style="margin-top:1rem;"></div>
 
-    <h3>Bulk Import</h3>
+    <h3 style="margin-top:1.8rem;">Bulk Import</h3>
     <p class="hint">
-      One entry per line. Formats:<br/>
-      <code>Hebrew, Transliteration, English</code><br/>
-      <code>Hebrew, English</code><br/>
-      You can also use semicolons or tabs instead of commas.
+      Paste multiple lines like:<br>
+      <code>שלום, shalom, hello</code><br>
+      <code>מה נשמע, how are you</code>
     </p>
-    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה נשמע, ma nishma, how are you"></textarea>
-    <button onclick="bulkAdd()">Bulk Add to Selected Database</button>
-    <div id="bulk-status" style="font-size:0.8rem;color:#555;"></div>
+
+    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה שלומך, how are you"></textarea>
+    <button onclick="bulkAdd()">Bulk Add</button>
+    <div id="bulk-status" style="font-size:0.85rem;color:#555;"></div>
   </div>
 
-  <!-- FLASHCARDS TAB -->
+  <!-- TAB CONTENT: FLASHCARDS -->
   <div id="flash" class="tab-content">
-    <h2>Flashcards & Practice</h2>
+    <h2>Flashcards</h2>
 
-    <label>Mode
+    <label>Mode:
       <select id="flash-mode">
-        <option value="he-to-en">Front: Hebrew → Back: English + transliteration</option>
-        <option value="en-to-he">Front: English → Back: Hebrew + transliteration</option>
+        <option value="he-to-en">Hebrew → English</option>
+        <option value="en-to-he">English → Hebrew</option>
       </select>
     </label>
 
     <button onclick="newCard()">New Card</button>
 
-    <div id="flashcard" class="flashcard">
+    <div id="flashcard" class="flashcard" style="margin-top:1rem;">
       <div class="flashcard-inner" id="flashcard-inner">
         <div class="flashcard-face flashcard-front" id="flashcard-front">
-          Click "New Card" to start
+          Click "New Card" to begin
         </div>
         <div class="flashcard-face flashcard-back" id="flashcard-back">
-          Click "New Card" to start
+          Click "New Card" to begin
         </div>
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-      <button style="flex:1 1 120px;" onclick="flipCard()">Flip</button>
-      <button style="flex:1 1 120px;background:#22c55e;" onclick="markRight()">I got it right</button>
-      <button style="flex:1 1 120px;background:#ef4444;" onclick="markWrong()">I got it wrong</button>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button onclick="flipCard()" style="flex:1 1 120px;">Flip</button>
+      <button onclick="markRight()" style="flex:1 1 120px;background:#3bc67d;">I got it right</button>
+      <button onclick="markWrong()" style="flex:1 1 120px;background:#ff6f6f;">I got it wrong</button>
     </div>
 
-    <h3 style="margin-top:16px;">Multiple Choice (Hebrew → English)</h3>
+    <h3 style="margin-top:1.6rem;">Multiple Choice</h3>
     <button onclick="newMCQ()">New Question</button>
 
-    <div id="mcq-question" class="flashcard" style="margin-top:8px;">
+    <div id="mcq-question" class="flashcard" style="margin-top:1rem;">
       <div class="flashcard-inner">
         <div class="flashcard-face flashcard-front">
-          Click "New Question" to start
+          Click "New Question" to begin
         </div>
       </div>
     </div>
-    <div id="mcq-options" style="margin-top:6px;"></div>
+
+    <div id="mcq-options" style="margin-top:12px;"></div>
   </div>
 
-  <!-- AI TUTOR (GEMINI) TAB -->
+  <!-- TAB CONTENT: AI TUTOR -->
   <div id="ai" class="tab-content">
     <h2>AI Hebrew Tutor (Gemini)</h2>
+
     <p class="hint">
-      Uses <strong>Google Gemini</strong> with your free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>.<br/>
-      The key is stored only on this device (in your browser).
+      Enter your Gemini API key once — it will be saved on this device.
     </p>
 
-    <label>Gemini API Key (stored locally on this device)
+    <label>Gemini API Key
       <input id="gemini-api-key" type="password" placeholder="AIza..." />
     </label>
-    <button onclick="saveGeminiKey()">Save key on this device</button>
+    <button onclick="saveGeminiKey()">Save Key</button>
 
-    <div id="gemini-key-status" style="font-size:0.8rem;color:#4b5563;margin-top:4px;"></div>
+    <div id="gemini-key-status" style="font-size:0.85rem;color:#555;margin-top:0.5rem;"></div>
 
-    <h3 style="margin-top:16px;">Chat</h3>
     <div id="ai-chat" class="chat-box"></div>
 
-    <textarea id="ai-input" placeholder="Type your question or sentence in Hebrew or English..."></textarea>
+    <textarea id="ai-input" placeholder="Type your message..."></textarea>
     <button onclick="sendAI()">Send</button>
   </div>
 
-</main>
+  <!-- TAB CONTENT: PRACTICE ARCADE 🎯 -->
+  <div id="arcade" class="tab-content">
+    <h2>Practice Arcade 🎯</h2>
+    <p style="color:#555;margin-bottom:1rem;">
+      Choose a practice mode below. (Game logic added in later chunks)
+    </p>
 
+    <!-- GAME TILE GRID -->
+    <div class="arcade-grid">
+
+      <!-- Missed Words (Red) -->
+      <div class="arcade-tile tile-red" data-tool="missed">
+        ❌ Missed Words
+      </div>
+
+      <!-- Sentence Builder (Purple) -->
+      <div class="arcade-tile tile-purple" data-tool="builder">
+        ✏️ Sentence Builder
+      </div>
+
+      <!-- Listening Mode (Blue) -->
+      <div class="arcade-tile tile-blue" data-tool="listening">
+        🎧 Listening Mode
+      </div>
+
+      <!-- Random Sentence Generator (Yellow) -->
+      <div class="arcade-tile tile-yellow" data-tool="generator">
+        🔀 Random Sentences
+      </div>
+
+      <!-- Typing Mode (Green) -->
+      <div class="arcade-tile tile-green" data-tool="typing">
+        ⌨️ Typing Practice
+      </div>
+
+      <!-- Multiple Choice Mode (Orange) -->
+      <div class="arcade-tile tile-orange" data-tool="mcq">
+        🟧 Multiple Choice
+      </div>
+
+    </div>
+
+    <!-- ADVANCED TOOLS SECTION -->
+    <div class="advanced-section">
+      <div class="advanced-title">Advanced Tools</div>
+
+      <div class="advanced-list">
+        <div class="advanced-item" data-tool="patterns">📊 Grammar Pattern Detector</div>
+        <div class="advanced-item" data-tool="vowelizer">🔡 Auto-Vowelizer</div>
+        <div class="advanced-item" data-tool="adaptive">📈 Adaptive Difficulty</div>
+        <div class="advanced-item" data-tool="conversation">🗣️ Conversation Simulator</div>
+        <div class="advanced-item" data-tool="visual">🎨 Visual Vocabulary Mode</div>
+        <div class="advanced-item" data-tool="settings">⚙️ Practice Settings</div>
+      </div>
+    </div>
+
+    <!-- EMPTY TOOL OUTPUT AREA (we fill this in later) -->
+    <div id="arcade-output" style="margin-top:2rem;"></div>
+
+    <!-- ================================
+     PRACTICE ARCADE INTERNAL UIs
+     (These remain hidden until a tile is clicked)
+================================ -->
+
+<!-- MISS DIRECT COMPREHENSION -->
+<div id="ui-missed" class="arcade-ui" style="display:none;">
+  <h3>❌ Missed Words Practice</h3>
+  <p>These are the words you’ve gotten wrong recently. Practice them until you master each one.</p>
+
+  <button onclick="startMissedPractice()">Begin Practice</button>
+
+  <div id="missed-container" style="margin-top:1rem;"></div>
+</div>
+
+<!-- SENTENCE BUILDER -->
+<div id="ui-builder" class="arcade-ui" style="display:none;">
+  <h3>✏️ Sentence Builder</h3>
+  <p>Drag words into the correct order to build the sentence.</p>
+
+  <button onclick="startSentenceBuilder()">Start Sentence Builder</button>
+
+  <div id="builder-target" style="margin-top:1.2rem; min-height:60px;"></div>
+  <div id="builder-words" style="margin-top:1.2rem; min-height:60px;"></div>
+</div>
+
+<!-- LISTENING MODE -->
+<div id="ui-listening" class="arcade-ui" style="display:none;">
+  <h3>🎧 Listening Mode</h3>
+  <p>Listen to the audio and type the Hebrew you hear.</p>
+
+  <button onclick="startListeningMode()">Start Listening</button>
+
+  <audio id="listening-audio" controls style="margin-top:1rem; width:100%; display:none;"></audio>
+
+  <textarea id="listening-input" placeholder="Type what you heard..." style="margin-top:1rem;"></textarea>
+  <button onclick="submitListeningAnswer()">Submit</button>
+
+  <div id="listening-feedback" style="margin-top:1rem;"></div>
+</div>
+
+<!-- RANDOM SENTENCE GENERATOR -->
+<div id="ui-generator" class="arcade-ui" style="display:none;">
+  <h3>🔀 Random Sentence Generator</h3>
+  <p>Generates a random sentence using only your vocabulary.</p>
+
+  <button onclick="generateRandomSentence()">Generate Sentence</button>
+
+  <div id="generated-sentence" style="margin-top:1.3rem; font-size:1.2rem; font-weight:600;"></div>
+</div>
+
+<!-- TYPING MODE -->
+<div id="ui-typing" class="arcade-ui" style="display:none;">
+  <h3>⌨️ Typing Practice</h3>
+  <p>Type the translation of the prompt in Hebrew with vowels.</p>
+
+  <button onclick="startTypingMode()">Begin Typing Practice</button>
+
+  <div id="typing-prompt" style="margin-top:1.3rem; font-size:1.2rem;"></div>
+
+  <textarea id="typing-input" placeholder="Type Hebrew here with nikud..." style="margin-top:1.2rem;"></textarea>
+  <button onclick="submitTypingAnswer()">Submit</button>
+
+  <div id="typing-feedback" style="margin-top:1rem;"></div>
+</div>
+
+<!-- MULTIPLE CHOICE MODE -->
+<div id="ui-mcq" class="arcade-ui" style="display:none;">
+  <h3>🟧 Multiple Choice Mode</h3>
+  <p>Select the correct translation.</p>
+
+  <button onclick="startArcadeMCQ()">Start MCQ</button>
+
+  <div id="arcade-mcq-question" style="margin-top:1.3rem; font-size:1.2rem;"></div>
+  <div id="arcade-mcq-options" style="margin-top:1rem;"></div>
+</div>
+
+<!-- GRAMMAR PATTERN DETECTOR -->
+<div id="ui-patterns" class="arcade-ui" style="display:none;">
+  <h3>📊 Grammar Pattern Detector</h3>
+  <p>Tracks repeated mistakes and shows personalized insights.</p>
+
+  <button onclick="analyzePatterns()">Analyze My Mistakes</button>
+
+  <div id="patterns-output" style="margin-top:1.3rem;"></div>
+</div>
+
+<!-- AUTO-VOWELIZER -->
+<div id="ui-vowelizer" class="arcade-ui" style="display:none;">
+  <h3>🔡 Auto-Vowelizer</h3>
+  <p>Type Hebrew without vowels — this tool suggests nikud and highlights errors.</p>
+
+  <textarea id="vowelizer-input" placeholder="Type Hebrew without vowels..."></textarea>
+  <button onclick="vowelize()">Vowelize</button>
+
+  <div id="vowelizer-output" style="margin-top:1.3rem; font-size:1.1rem;"></div>
+</div>
+
+<!-- ADAPTIVE DIFFICULTY -->
+<div id="ui-adaptive" class="arcade-ui" style="display:none;">
+  <h3>📈 Adaptive Difficulty Mode</h3>
+  <p>This adjusts difficulty based on your performance.</p>
+
+  <button onclick="startAdaptive()">Start Adaptive Practice</button>
+
+  <div id="adaptive-output" style="margin-top:1.3rem;"></div>
+</div>
+
+<!-- CONVERSATION SIMULATOR -->
+<div id="ui-conversation" class="arcade-ui" style="display:none;">
+  <h3>🗣️ Conversation Simulator</h3>
+  <p>Simulated AI conversation using only your vocabulary.</p>
+
+  <button onclick="startConversation()">Start Conversation</button>
+
+  <div id="conversation-chat" class="chat-box" style="margin-top:1rem;"></div>
+
+  <textarea id="conversation-input" placeholder="Type in Hebrew..."></textarea>
+  <button onclick="sendConversation()">Send</button>
+</div>
+
+<!-- VISUAL VOCABULARY -->
+<div id="ui-visual" class="arcade-ui" style="display:none;">
+  <h3>🎨 Visual Vocabulary Mode</h3>
+  <p>Learn words with emojis or illustrative icons.</p>
+
+  <button onclick="showVisualVocab()">Show Visual Cards</button>
+
+  <div id="visual-cards" style="margin-top:1.3rem;"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="ui-settings" class="arcade-ui" style="display:none;">
+  <h3>⚙️ Practice Settings</h3>
+  <p>Customize strictness levels, pacing, hints, etc.</p>
+
+  <label>Strict Grading Mode
+    <select id="setting-strict">
+      <option value="on">On (recommended)</option>
+      <option value="off">Off</option>
+    </select>
+  </label>
+
+  <label>Pacing
+    <select id="setting-pace">
+      <option value="slow">Slow</option>
+      <option value="normal" selected>Normal</option>
+      <option value="fast">Fast</option>
+    </select>
+  </label>
+
+  <button onclick="savePracticeSettings()">Save Settings</button>
+
+  <div id="settings-status" style="margin-top:1rem;"></div>
+</div>
+  </div>
+
+</main>
 <script type="module">
-/* -------------------------------
-   FIREBASE SETUP
---------------------------------*/
+
+/* ============================================================
+   FIREBASE INITIALIZATION
+============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getFirestore,
@@ -578,41 +772,35 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* -------------------------------
-   DATABASE (LOCAL + CLOUD)
---------------------------------*/
+/* ============================================================
+   LOCAL + CLOUD DATABASE
+============================================================ */
 let teacherDB = [];
 let generalDB = [];
 let currentUser = null;
 
-const TEACHER_KEY = "hebrew_teacher_local_v1";
-const GENERAL_KEY = "hebrew_general_local_v1";
+const LOCAL_TEACHER = "teacher_db_v2";
+const LOCAL_GENERAL = "general_db_v2";
 
 function loadLocalDB() {
-  try {
-    teacherDB = JSON.parse(localStorage.getItem(TEACHER_KEY) || "[]");
-    generalDB = JSON.parse(localStorage.getItem(GENERAL_KEY) || "[]");
-  } catch {
-    teacherDB = [];
-    generalDB = [];
-  }
+  teacherDB = JSON.parse(localStorage.getItem(LOCAL_TEACHER) || "[]");
+  generalDB = JSON.parse(localStorage.getItem(LOCAL_GENERAL) || "[]");
 }
 
 function saveLocalDB() {
-  localStorage.setItem(TEACHER_KEY, JSON.stringify(teacherDB));
-  localStorage.setItem(GENERAL_KEY, JSON.stringify(generalDB));
+  localStorage.setItem(LOCAL_TEACHER, JSON.stringify(teacherDB));
+  localStorage.setItem(LOCAL_GENERAL, JSON.stringify(generalDB));
 }
 
-// get cloud data without mutating globals
-async function fetchCloudDB(uid) {
+async function loadCloudDB(uid) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
-  const data = snap.data();
-  return {
-    teacherDB: data.teacherDB || [],
-    generalDB: data.generalDB || []
-  };
+
+  if (snap.exists()) {
+    const data = snap.data();
+    teacherDB = data.teacherDB || [];
+    generalDB = data.generalDB || [];
+  }
 }
 
 async function saveCloudDB(uid) {
@@ -620,132 +808,102 @@ async function saveCloudDB(uid) {
   await setDoc(ref, { teacherDB, generalDB }, { merge: true });
 }
 
-// sync behavior on login
 async function syncOnLogin(uid) {
   loadLocalDB();
-  const localTeacher = teacherDB || [];
-  const localGeneral = generalDB || [];
-  const hadLocal = localTeacher.length > 0 || localGeneral.length > 0;
 
-  const cloud = await fetchCloudDB(uid);
+  const localTeacher = [...teacherDB];
+  const localGeneral = [...generalDB];
+  const hasLocal = localTeacher.length || localGeneral.length;
 
-  if (!cloud) {
-    teacherDB = localTeacher;
-    generalDB = localGeneral;
-    if (hadLocal) await saveCloudDB(uid);
-  } else {
-    const cloudHasData =
-      (cloud.teacherDB && cloud.teacherDB.length > 0) ||
-      (cloud.generalDB && cloud.generalDB.length > 0);
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
 
-    if (cloudHasData) {
-      teacherDB = cloud.teacherDB;
-      generalDB = cloud.generalDB;
-    } else {
-      teacherDB = localTeacher;
-      generalDB = localGeneral;
-      if (hadLocal) await saveCloudDB(uid);
+  if (snap.exists()) {
+    const data = snap.data();
+    const cloudTeacher = data.teacherDB || [];
+    const cloudGeneral = data.generalDB || [];
+
+    if (cloudTeacher.length || cloudGeneral.length) {
+      teacherDB = cloudTeacher;
+      generalDB = cloudGeneral;
+      saveLocalDB();
+    } else if (hasLocal) {
+      await saveCloudDB(uid);
     }
+  } else if (hasLocal) {
+    await saveCloudDB(uid);
   }
-
-  saveLocalDB();
 }
 
-/* -------------------------------
-   WORD MANAGEMENT + STATS
---------------------------------*/
+/* ============================================================
+   WORD LIST RENDERING + STATS
+============================================================ */
 function computeStats(db) {
   const attempts = db.reduce((sum, w) => sum + (w.correct || 0) + (w.wrong || 0), 0);
   const correct = db.reduce((sum, w) => sum + (w.correct || 0), 0);
-  const totalWords = db.length;
-  const percent = attempts > 0 ? Math.round((correct / attempts) * 100) : null;
-  return { attempts, correct, totalWords, percent };
+  const percent = attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
+  return { attempts, correct, percent };
 }
 
 function renderLists() {
-  const tList = document.getElementById("teacher-list");
-  const gList = document.getElementById("general-list");
-  const tStatsEl = document.getElementById("teacher-stats");
-  const gStatsEl = document.getElementById("general-stats");
-  const overallEl = document.getElementById("overall-stats");
+  const teacherList = document.getElementById("teacher-list");
+  const generalList = document.getElementById("general-list");
 
-  // Teacher list
-  if (teacherDB.length === 0) {
-    tList.innerHTML = '<div class="db-inner empty">No words yet in Teacher Database.</div>';
-  } else {
-    tList.innerHTML = teacherDB.map((w, i) => `
-      <div class="word-row">
-        <div class="word-main">
-          <div class="word-he">${w.he}</div>
-          <div class="word-en">${w.en}</div>
-          ${w.tr ? `<div class="word-tr">${w.tr}</div>` : ""}
-        </div>
-        <button class="delete-btn" onclick="deleteWord('teacher', ${i})">Delete</button>
-      </div>
-    `).join("");
-  }
+  teacherList.innerHTML = teacherDB.length
+    ? teacherDB.map((w,i)=>wordRow("teacher", i, w)).join("")
+    : "<p>No words yet.</p>";
 
-  // General list
-  if (generalDB.length === 0) {
-    gList.innerHTML = '<div class="db-inner empty" style="background:transparent;box-shadow:none;padding:0;">No words yet in General Database.</div>';
-  } else {
-    gList.innerHTML = generalDB.map((w, i) => `
-      <div class="word-row">
-        <div class="word-main">
-          <div class="word-he">${w.he}</div>
-          <div class="word-en">${w.en}</div>
-          ${w.tr ? `<div class="word-tr">${w.tr}</div>` : ""}
-        </div>
-        <button class="delete-btn" onclick="deleteWord('general', ${i})">Delete</button>
-      </div>
-    `).join("");
-  }
+  generalList.innerHTML = generalDB.length
+    ? generalDB.map((w,i)=>wordRow("general", i, w)).join("")
+    : "<p>No words yet.</p>";
 
-  // Stats
-  const tStats = computeStats(teacherDB);
-  const gStats = computeStats(generalDB);
   const all = [...teacherDB, ...generalDB];
-  const oStats = computeStats(all);
+  const t = computeStats(teacherDB);
+  const g = computeStats(generalDB);
+  const a = computeStats(all);
 
-  tStatsEl.textContent =
-    tStats.attempts > 0
-      ? `Stats: ${tStats.percent}% (${tStats.correct}/${tStats.attempts} correct)`
-      : "Stats: no attempts yet";
-
-  gStatsEl.textContent =
-    gStats.attempts > 0
-      ? `Stats: ${gStats.percent}% (${gStats.correct}/${gStats.attempts} correct)`
-      : "Stats: no attempts yet";
-
-  if (all.length === 0) {
-    overallEl.textContent = "No words yet overall.";
-  } else if (oStats.attempts > 0) {
-    overallEl.textContent =
-      `Teacher: ${tStats.percent ?? "–"}% (${tStats.correct}/${tStats.attempts}) · ` +
-      `General: ${gStats.percent ?? "–"}% (${gStats.correct}/${gStats.attempts}) · ` +
-      `Overall: ${oStats.percent}% (${oStats.correct}/${oStats.attempts} correct) · ` +
-      `${all.length} word${all.length === 1 ? "" : "s"} total 🎉`;
-  } else {
-    overallEl.textContent =
-      `Teacher: 0 attempts · General: 0 attempts · Overall: 0 attempts · ${all.length} word${all.length === 1 ? "" : "s"} saved`;
-  }
+  document.getElementById("overall-stats").innerHTML =
+    `Teacher: ${t.percent}% | General: ${g.percent}% | Overall: ${a.percent}%`;
 }
 
-window.addWord = function () {
-  let he = document.getElementById("hebrew").value.trim();
-  let tr = document.getElementById("translit").value.trim();
-  let en = document.getElementById("english").value.trim();
-  let dbSel = document.getElementById("db-select").value;
+function wordRow(db, index, w) {
+  return `
+    <div style="padding:10px;border-bottom:1px solid #eee;">
+      <strong>${w.he}</strong> — ${w.en}
+      ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
+      <button onclick="deleteWord('${db}', ${index})"
+        style="margin-top:6px;background:#ff6f6f;color:white;border:none;padding:6px 12px;border-radius:6px;">
+        Delete
+      </button>
+    </div>
+  `;
+}
 
-  if (!he || !en) return alert("Need Hebrew + English");
-
-  let obj = { he, tr, en, correct: 0, wrong: 0 };
-
-  if (dbSel === "teacher") teacherDB.push(obj);
-  else generalDB.push(obj);
+window.deleteWord = function (db, i) {
+  if (db === "teacher") teacherDB.splice(i,1);
+  else generalDB.splice(i,1);
 
   saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+};
+
+window.addWord = function () {
+  const he = document.getElementById("hebrew").value.trim();
+  const tr = document.getElementById("translit").value.trim();
+  const en = document.getElementById("english").value.trim();
+  const dbChoice = document.getElementById("db-select").value;
+
+  if (!he || !en) return alert("Hebrew + English required.");
+
+  const w = { he, tr, en, correct:0, wrong:0 };
+
+  if (dbChoice === "teacher") teacherDB.push(w);
+  else generalDB.push(w);
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
   renderLists();
 
   document.getElementById("hebrew").value = "";
@@ -753,32 +911,14 @@ window.addWord = function () {
   document.getElementById("english").value = "";
 };
 
-window.deleteWord = function (which, index) {
-  if (which === "teacher") {
-    teacherDB.splice(index, 1);
-  } else {
-    generalDB.splice(index, 1);
-  }
-  saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
-  renderLists();
-};
-
-/* -------------------------------
-   BULK IMPORT
---------------------------------*/
+/* ============================================================
+   BULK ADD WORDS
+============================================================ */
 window.bulkAdd = function () {
   const textarea = document.getElementById("bulk-input");
-  const statusEl = document.getElementById("bulk-status");
-  const dbSel = document.getElementById("db-select").value;
+  const lines = textarea.value.trim().split(/\r?\n/);
+  const dbChoice = document.getElementById("db-select").value;
 
-  const text = textarea.value.trim();
-  if (!text) {
-    statusEl.textContent = "Nothing to add. Paste some lines first.";
-    return;
-  }
-
-  const lines = text.split(/\r?\n/);
   let added = 0;
   let skipped = [];
 
@@ -787,403 +927,489 @@ window.bulkAdd = function () {
     if (!raw) continue;
 
     const parts = raw.split(/[,;\t]/).map(p => p.trim()).filter(Boolean);
-
     if (parts.length < 2) {
-      skipped.push(i + 1);
+      skipped.push(i+1);
       continue;
     }
 
-    let he = "";
-    let tr = "";
-    let en = "";
+    let he = "", tr = "", en = "";
 
     if (parts.length === 2) {
-      he = parts[0];
-      en = parts[1];
-      tr = "";
+      [he, en] = parts;
     } else {
       he = parts[0];
       tr = parts[1];
       en = parts.slice(2).join(", ");
     }
 
-    if (!he || !en) {
-      skipped.push(i + 1);
-      continue;
-    }
+    const w = { he, tr, en, correct:0, wrong:0 };
 
-    const obj = { he, tr, en, correct: 0, wrong: 0 };
-
-    if (dbSel === "teacher") teacherDB.push(obj);
-    else generalDB.push(obj);
+    if (dbChoice === "teacher") teacherDB.push(w);
+    else generalDB.push(w);
 
     added++;
   }
 
-  if (added > 0) {
-    saveLocalDB();
-    if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
-    renderLists();
-  }
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
 
-  let msg = `Added ${added} word(s) to ${dbSel === "teacher" ? "Teacher" : "General"} Database.`;
-  if (skipped.length > 0) {
-    msg += ` Skipped line(s): ${skipped.join(", ")} (bad format).`;
-  }
-  statusEl.textContent = msg;
+  renderLists();
+
+  document.getElementById("bulk-status").innerHTML =
+    `Added ${added} words.${skipped.length ? " Skipped lines: "+skipped.join(", ") : ""}`;
 };
 
-/* -------------------------------
-   FLASHCARDS WITH FLIP ANIMATION
---------------------------------*/
+/* ============================================================
+   FLASHCARDS
+============================================================ */
 let currentCard = null;
 
 function getAllWords() {
   return [...teacherDB, ...generalDB];
 }
 
-function getFrontText(card, mode) {
-  return mode === "he-to-en" ? card.he : card.en;
-}
-
-function getBackText(card, mode) {
-  const tr = card.tr ? ` (${card.tr})` : "";
-  if (mode === "he-to-en") {
-    return card.en + tr;
-  } else {
-    return card.he + tr;
-  }
-}
-
 window.newCard = function () {
-  let all = getAllWords();
-  let flashEl = document.getElementById("flashcard");
-  let frontEl = document.getElementById("flashcard-front");
-  let backEl = document.getElementById("flashcard-back");
+  const all = getAllWords();
+  if (!all.length) return alert("Add words first.");
 
-  if (all.length === 0) {
-    frontEl.innerText = "No words yet! Add some on the Manage tab 😊";
-    backEl.innerText = "No words yet! Add some on the Manage tab 😊";
-    flashEl.classList.remove("flipped");
-    currentCard = null;
-    return;
-  }
+  currentCard = all[Math.floor(Math.random()*all.length)];
+  const mode = document.getElementById("flash-mode").value;
 
-  currentCard = all[Math.floor(Math.random() * all.length)];
-  let mode = document.getElementById("flash-mode").value;
+  const front = document.getElementById("flashcard-front");
+  const back = document.getElementById("flashcard-back");
+  const card = document.getElementById("flashcard");
 
-  frontEl.innerText = getFrontText(currentCard, mode);
-  backEl.innerText = getBackText(currentCard, mode);
-  flashEl.classList.remove("flipped");
+  front.innerText = (mode === "he-to-en") ? currentCard.he : currentCard.en;
+  back.innerText = (mode === "he-to-en")
+    ? currentCard.en + (currentCard.tr ? ` (${currentCard.tr})` : "")
+    : currentCard.he + (currentCard.tr ? ` (${currentCard.tr})` : "");
+
+  card.classList.remove("flipped");
 };
 
 window.flipCard = function () {
-  const flashEl = document.getElementById("flashcard");
-  if (!currentCard) return;
-  flashEl.classList.toggle("flipped");
+  document.getElementById("flashcard").classList.toggle("flipped");
 };
 
 window.markRight = function () {
   if (!currentCard) return;
-  currentCard.correct = (currentCard.correct || 0) + 1;
+
+  currentCard.correct++;
   saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
-  renderLists();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
   newCard();
 };
 
 window.markWrong = function () {
   if (!currentCard) return;
-  currentCard.wrong = (currentCard.wrong || 0) + 1;
+
+  currentCard.wrong++;
+  
+  // add to missed queue
+  if (!missedQueue.includes(currentCard)) {
+    missedQueue.push(currentCard);
+  }
+
   saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
-  renderLists();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
   newCard();
 };
 
-/* -------------------------------
-   MULTIPLE CHOICE
---------------------------------*/
+/* ============================================================
+   MULTIPLE CHOICE (Flashcards tab)
+============================================================ */
 window.newMCQ = function () {
-  let all = getAllWords();
-  let qDiv = document.getElementById("mcq-question");
-  let optDiv = document.getElementById("mcq-options");
+  const all = getAllWords();
+  if (all.length < 2) return alert("Need at least 2 words.");
 
-  if (all.length < 2) {
-    qDiv.querySelector(".flashcard-front").innerText = "Need at least 2 words in your databases.";
-    optDiv.innerHTML = "";
-    return;
-  }
-
-  let correct = all[Math.floor(Math.random() * all.length)];
-  let choices = [correct];
+  const correct = all[Math.floor(Math.random()*all.length)];
+  const choices = [correct];
 
   while (choices.length < 4 && choices.length < all.length) {
-    let c = all[Math.floor(Math.random() * all.length)];
+    const c = all[Math.floor(Math.random()*all.length)];
     if (!choices.includes(c)) choices.push(c);
   }
 
-  qDiv.querySelector(".flashcard-front").innerText = correct.he;
-  optDiv.innerHTML = choices
-    .map(c => `<button class="choice-btn" onclick="checkMCQ('${c.en.replace(/'/g,"\\'")}','${correct.en.replace(/'/g,"\\'")}')">${c.en}</button>`)
-    .join("");
+  document.getElementById("mcq-question").innerText = correct.he;
+
+  document.getElementById("mcq-options").innerHTML = choices.map(c => `
+    <button class="choice-btn"
+      onclick="checkMCQ('${c.en.replace(/'/g,"\\'")}', '${correct.en.replace(/'/g,"\\'")}')">
+      ${c.en}
+    </button>
+  `).join("");
 };
 
 window.checkMCQ = function (chosen, correct) {
-  alert(chosen === correct ? "✅ Correct!" : "❌ Not quite. Correct answer: " + correct);
+  alert(chosen === correct ? "Correct!" : "Wrong! Correct: " + correct);
 };
 
-/* -------------------------------
-   GEMINI AI TUTOR
---------------------------------*/
-const GEMINI_KEY_STORAGE = "hebrew_gemini_api_key_v1";
-let geminiKey = "";
-let aiHistory = []; // {role: "user"|"model", text: string}
+/* ============================================================
+   TAB SWITCHING
+============================================================ */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
 
-function loadGeminiKey() {
-  try {
-    geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || "";
-    const input = document.getElementById("gemini-api-key");
-    if (input) input.value = geminiKey;
-    const status = document.getElementById("gemini-key-status");
-    if (status) {
-      status.textContent = geminiKey
-        ? "Key loaded from this device. You can change it anytime."
-        : "No key saved yet. Get one from Google AI Studio (free).";
-    }
-  } catch {
-    geminiKey = "";
-  }
-}
-window.saveGeminiKey = function () {
-  const input = document.getElementById("gemini-api-key");
-  const status = document.getElementById("gemini-key-status");
-  const val = (input.value || "").trim();
-  if (!val) {
-    status.textContent = "Please paste a valid Gemini API key.";
-    return;
-  }
-  geminiKey = val;
-  localStorage.setItem(GEMINI_KEY_STORAGE, geminiKey);
-  status.textContent = "Key saved on this device.";
-};
-
-function appendAIMessage(role, text) {
-  const box = document.getElementById("ai-chat");
-  if (!box) return;
-  const div = document.createElement("div");
-  div.className = role === "user" ? "chat-msg-user" : "chat-msg-ai";
-  const span = document.createElement("span");
-  span.textContent = text;
-  div.appendChild(span);
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-
-function buildVocabSummary() {
-  const all = getAllWords();
-  if (all.length === 0) return "No vocabulary has been added yet.";
-  const lines = all.map(w => {
-    const tr = w.tr ? ` (${w.tr})` : "";
-    return `${w.he}${tr} = ${w.en}`;
+    document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+    document.getElementById(t.dataset.tab).classList.add("active");
   });
-  return lines.join("\n");
-}
+});
 
-window.sendAI = async function () {
-  const inputEl = document.getElementById("ai-input");
-  if (!inputEl) return;
-  const msg = inputEl.value.trim();
-  if (!msg) return;
-  if (!geminiKey) {
-    alert("Please paste your Gemini API key and click 'Save key on this device' first.");
-    return;
-  }
+/* ============================================================
+   PRACTICE ARCADE — TILE SELECTION
+============================================================ */
+const arcadeTiles = document.querySelectorAll(".arcade-tile, .advanced-item");
 
-  appendAIMessage("user", msg);
-  aiHistory.push({ role: "user", text: msg });
-  inputEl.value = "";
+const arcadeOutput = document.getElementById("arcade-output");
+const arcadeUIs = {
+  missed: "ui-missed",
+  builder: "ui-builder",
+  listening: "ui-listening",
+  generator: "ui-generator",
+  typing: "ui-typing",
+  mcq: "ui-mcq",
 
-  const vocab = buildVocabSummary();
+  patterns: "ui-patterns",
+  vowelizer: "ui-vowelizer",
+  adaptive: "ui-adaptive",
+  conversation: "ui-conversation",
+  visual: "ui-visual",
+  settings: "ui-settings"
+};
 
-  const systemText =
+arcadeTiles.forEach(tile=>{
+  tile.addEventListener("click", ()=>{
+    const tool = tile.dataset.tool;
+    if (!tool) return;
+
+    arcadeOutput.innerHTML = ""; // clear old content
+
+    // hide all templates
+    document.querySelectorAll(".arcade-ui").forEach(ui=>{
+      ui.style.display = "none";
+    });
+
+    // show selected tool
+    const id = arcadeUIs[tool];
+    const ui = document.getElementById(id);
+    if (ui) {
+      arcadeOutput.appendChild(ui);
+      ui.style.display = "block";
+    }
+  });
+});
+
+/* ============================================================
+   MISSED WORDS QUEUE (placeholder)
+============================================================ */
+let missedQueue = [];
+
+window.startMissedPractice = function () {
+  document.getElementById("missed-container").innerHTML =
+    missedQueue.length
+      ? missedQueue.map(w=>`<div style="padding:6px;">${w.he} — ${w.en}</div>`).join("")
+      : "<p>No missed words yet!</p>";
+};
+
+/* ============================================================
+   SENTENCE BUILDER (placeholder)
+============================================================ */
+window.startSentenceBuilder = function () {
+  document.getElementById("builder-target").innerHTML =
+    "<p>(Sentence builder will go here)</p>";
+
+  document.getElementById("builder-words").innerHTML = "";
+};
+
+/* ============================================================
+   LISTENING MODE (placeholder)
+============================================================ */
+window.startListeningMode = function () {
+  document.getElementById("listening-feedback").innerHTML =
+    "<p>(Listening mode logic will be added later)</p>";
+};
+
+window.submitListeningAnswer = function () {
+  document.getElementById("listening-feedback").innerHTML =
+    "<p>(Listening mode grading soon)</p>";
+};
+
+/* ============================================================
+   RANDOM SENTENCE GENERATOR (placeholder)
+============================================================ */
+window.generateRandomSentence = function () {
+  document.getElementById("generated-sentence").innerText =
+    "(Random sentence generator coming soon)";
+};
+
+/* ============================================================
+   TYPING MODE (placeholder)
+============================================================ */
+window.startTypingMode = function () {
+  document.getElementById("typing-prompt").innerText = "(Typing practice will go here)";
+};
+
+window.submitTypingAnswer = function () {
+  document.getElementById("typing-feedback").innerText = "(Typing feedback soon)";
+};
+
+/* ============================================================
+   ARCADE MCQ (placeholder)
+============================================================ */
+window.startArcadeMCQ = function () {
+  document.getElementById("arcade-mcq-question").innerText =
+    "(MCQ Arcade mode coming)";
+};
+
+/* ============================================================
+   ADVANCED TOOLS (placeholder)
+============================================================ */
+window.analyzePatterns = function () {
+  document.getElementById("patterns-output").innerText =
+    "(Pattern analysis coming soon)";
+};
+
+window.vowelize = function () {
+  document.getElementById("vowelizer-output").innerText =
+    "(Auto vowelizer coming)";
+};
+
+window.startAdaptive = function () {
+  document.getElementById("adaptive-output").innerText =
+    "(Adaptive difficulty coming)";
+};
+
+window.startConversation = function () {
+  document.getElementById("conversation-chat").innerHTML =
+    "<p>(Conversation simulator coming soon)</p>";
+};
+
+window.sendConversation = function () {
+  document.getElementById("conversation-chat").innerHTML +=
+    "<div><em>(Your message sent — logic soon)</em></div>";
+};
+
+window.showVisualVocab = function () {
+  document.getElementById("visual-cards").innerHTML =
+    "(Visual vocabulary cards coming)";
+};
+
+window.savePracticeSettings = function () {
+  document.getElementById("settings-status").innerText = "Settings saved!";
+};
+
+/* ============================================================
+   GEMINI AI SETUP (clean base)
+============================================================ */
+const GEMINI_KEY_STORAGE = "gemini_api_key_v2";
+let geminiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || "";
+document.getElementById("gemini-api-key").value = geminiKey;
+
+window.saveGeminiKey = function () {
+  const key = document.getElementById("gemini-api-key").value.trim();
+  if (!key) return alert("Enter a key.");
+  geminiKey = key;
+  localStorage.setItem(GEMINI_KEY_STORAGE, key);
+  document.getElementById("gemini-key-status").innerText = "Key saved!";
+};
+
+let aiHistory = [];
+
+function systemText(vocab) {
+  return (
     "You are a strict Hebrew tutor. Follow these rules EXACTLY:\n" +
     "────────────────────────\n" +
     "1. STRICT GRADING\n" +
     "- Grade every Hebrew answer with ZERO leniency.\n" +
-    "- If the answer is even slightly wrong (missing letter, wrong vowel, wrong form, wrong gender, extra spaces, missing dagesh, wrong letter like א vs ע, שׂ vs ס, ב vs ו, etc.) → it is INCORRECT.\n" +
-    "- Immediately show the correct Hebrew form WITH vowels.\n" +
+    "- If the answer is even slightly wrong (missing letter, wrong vowel, wrong form, wrong gender, extra spaces, wrong letter like א vs ע, שׂ vs ס, ב vs ו, etc.) → it is INCORRECT.\n" +
+    "- Immediately show the correct Hebrew form WITH vowels (nikud).\n" +
     "- Re-ask incorrect items later until the student gets full mastery.\n" +
     "────────────────────────\n" +
     "2. QUIZ FORMAT\n" +
     "- Ask ONE question at a time.\n" +
     "- Ask every question in ENGLISH.\n" +
     "- The student MUST answer ONLY in HEBREW with vowels (nikud).\n" +
-    "- Rotate:\n" +
+    "- Rotate between:\n" +
     "  • Single words\n" +
     "  • Short phrases\n" +
-    "  • Full sentences\n" +
+    "  • Simple full sentences\n" +
     "  • Previously missed words\n" +
     "────────────────────────\n" +
     "3. MISSED WORD ROTATION\n" +
     "- Any missed word or sentence MUST be:\n" +
     "  • Added back into rotation\n" +
-    "  • Repeated until perfect\n" +
+    "  • Repeated periodically until the student answers it perfectly.\n" +
     "────────────────────────\n" +
     "4. VOCABULARY SOURCE\n" +
-    "- ONLY use the vocabulary list the user provides.\n" +
-    "- Do NOT introduce any outside vocabulary unless it is extremely basic and needed for a simple sentence.\n" +
+    "- ONLY use the student's vocabulary list provided below.\n" +
+    "- Do NOT introduce other vocabulary unless it is extremely basic AND needed to form a simple sentence.\n" +
     "────────────────────────\n" +
     "5. ANSWER FORMAT REQUIREMENTS\n" +
     "STUDENT ANSWERS:\n" +
-    "- Must be 100% Hebrew.\n" +
+    "- Must be 100% in Hebrew.\n" +
     "- No English allowed.\n" +
-    "- If the student uses '_____' then they forgot → mark incorrect.\n" +
+    "- If the student uses '_____' they clearly forgot → mark INCORRECT.\n" +
     "- Grade spelling, vowels, and exact letters strictly.\n" +
     "YOUR RESPONSES:\n" +
-    "- Provide clean corrections only.\n" +
-    "- Keep responses short and focused.\n" +
-    "- No extra commentary unless asked.\n" +
+    "- Keep replies VERY short and focused (1–2 short sentences MAX).\n" +
+    "- First say if the answer is Correct or Incorrect.\n" +
+    "- If incorrect, immediately show the CORRECT Hebrew with vowels, plus transliteration and a short English gloss.\n" +
+    "- Do NOT over-explain unless the student explicitly asks (e.g., 'explain this').\n" +
     "────────────────────────\n" +
     "6. PACING\n" +
     "- Ask ONE question.\n" +
-    "- WAIT for the student’s answer.\n" +
+    "- WAIT for the student's answer.\n" +
     "- Then grade it strictly.\n" +
+    "- Then ask the next single question.\n" +
     "────────────────────────\n" +
     "7. TEACHING STYLE\n" +
-    "- No over-explaining unless asked.\n" +
-    "- No giving away answers early.\n" +
-    "- Difficulty should match the student's vocab.\n" +
-    "- Occasionally introduce very basic new words if needed for structure.\n" +
+    "- Do NOT give away answers early.\n" +
+    "- Keep the difficulty consistent with the student's vocabulary list.\n" +
+    "- Occasionally you may introduce a very basic new word if it clearly helps build a simple sentence, but keep focus on known words.\n" +
     "────────────────────────\n" +
     "8. USER PREFERENCES\n" +
-    "- Keep quizzes simple, clean, and short.\n" +
-    "- Heavy focus on spelling, vowels, and letter differences.\n" +
+    "- The student prefers a short, simple, clean quiz format.\n" +
+    "- Heavy focus on:\n" +
+    "  • Spelling\n" +
+    "  • Vowels (nikud)\n" +
+    "  • Tricky letters (א vs ע, שׂ vs ס, ב/ו for 'v', etc.)\n" +
     "────────────────────────\n" +
     "9. META QUESTIONS\n" +
-    "If the student asks grammar or letter-rule questions:\n" +
-    "- Answer briefly.\n" +
-    "- IMMEDIATELY return to quiz mode.\n" +
+    "- If the student asks about grammar, letters, or rules, answer BRIEFLY.\n" +
+    "- After answering, immediately return to quiz mode and ask a new question.\n" +
     "────────────────────────\n" +
-    "END OF RULES.\n" +
-    "\nHere is the user's vocabulary list:\n" +
+    "10. LENGTH\n" +
+    "- Always keep your responses concise: 1–2 short sentences plus the corrected Hebrew line if needed.\n" +
+    "- Always end your response with a NEW quiz question in English.\n" +
+    "────────────────────────\n" +
+    "STUDENT VOCABULARY LIST (USE THIS):\n" +
     vocab +
-    "\nNow continue following these rules EXACTLY.";
+    "\n\nNow start or continue a strict Hebrew quiz following ALL of these rules."
+  );
+}
 
-  const contents = [];
+window.sendAI = async function () {
+  const msg = document.getElementById("ai-input").value.trim();
+  if (!msg) return;
+  if (!geminiKey) return alert("Enter API key.");
 
-  // First "system-like" instruction as a user message (Gemini style)
-  contents.push({
-    role: "user",
-    parts: [{ text: systemText }]
-  });
+  appendAI("user", msg);
+  aiHistory.push({ role:"user", text:msg });
 
-  // Conversation history
-  for (const entry of aiHistory) {
-    contents.push({
-      role: entry.role === "user" ? "user" : "model",
-      parts: [{ text: entry.text }]
-    });
-  }
+  document.getElementById("ai-input").value = "";
 
-  const url =
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" +
-    encodeURIComponent(geminiKey);
+  const vocab = [...teacherDB, ...generalDB]
+    .map(w => `${w.he}${w.tr ? ` (${w.tr})` : ""} = ${w.en}`)
+    .join("\n");
+
+  const contents = [
+    {
+      role: "user",
+      parts: [{ text: systemText(vocab) }] // Strict rules injected in chunk 6
+    },
+    ...aiHistory.map(x => ({
+      role: x.role === "user" ? "user" : "model",
+      parts: [{ text: x.text }]
+    }))
+  ];
 
   try {
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents })
-    });
-
-    if (!resp.ok) {
-      const txt = await resp.text();
-      appendAIMessage("model", "Error from Gemini: " + txt);
-      return;
-    }
+    const resp = await fetch(
+      "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" +
+        encodeURIComponent(geminiKey),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents })
+      }
+    );
 
     const data = await resp.json();
-    const candidate = data.candidates && data.candidates[0];
-    let aiText = "No response.";
-    if (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0]) {
-      aiText = candidate.content.parts[0].text || "No response.";
-    }
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text || "(No response)";
 
-    appendAIMessage("model", aiText);
-    aiHistory.push({ role: "model", text: aiText });
+    appendAI("ai", text);
+    aiHistory.push({ role:"model", text });
   } catch (e) {
-    appendAIMessage("model", "Error: " + e.message);
+    appendAI("ai", "Error: " + e.message);
   }
 };
 
-/* -------------------------------
-   AUTHENTICATION UI
---------------------------------*/
-const statusEl = document.getElementById("auth-status-text");
+function appendAI(role, text) {
+  const box = document.getElementById("ai-chat");
+  const div = document.createElement("div");
+  div.className = role === "user" ? "chat-msg-user" : "chat-msg-ai";
 
-document.getElementById("auth-signup").onclick = async () => {
+  const span = document.createElement("span");
+  span.textContent = text;
+  div.appendChild(span);
+
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ============================================================
+   AUTHENTICATION
+============================================================ */
+document.getElementById("auth-signup").onclick = async()=>{
   try {
-    let email = document.getElementById("auth-email").value;
-    let pass = document.getElementById("auth-password").value;
+    const email = document.getElementById("auth-email").value;
+    const pass = document.getElementById("auth-password").value;
     await createUserWithEmailAndPassword(auth, email, pass);
     alert("Signed up!");
   } catch (e) {
-    alert("Error: " + e.message);
+    alert(e.message);
   }
 };
 
-document.getElementById("auth-login").onclick = async () => {
+document.getElementById("auth-login").onclick = async()=>{
   try {
-    let email = document.getElementById("auth-email").value;
-    let pass = document.getElementById("auth-password").value;
+    const email = document.getElementById("auth-email").value;
+    const pass = document.getElementById("auth-password").value;
     await signInWithEmailAndPassword(auth, email, pass);
     alert("Logged in!");
   } catch (e) {
-    alert("Error: " + e.message);
+    alert(e.message);
   }
 };
 
-document.getElementById("auth-logout").onclick = async () => {
+document.getElementById("auth-logout").onclick = async()=>{
   await signOut(auth);
 };
 
-/* -------------------------------
+/* ============================================================
    AUTH STATE LISTENER
---------------------------------*/
-onAuthStateChanged(auth, async (user) => {
+============================================================ */
+onAuthStateChanged(auth, async (user)=>{
   currentUser = user;
+
   if (user) {
-    statusEl.textContent = "Signed in as " + user.email;
+    document.getElementById("auth-status-text").innerText =
+      "Signed in as " + user.email;
+
     await syncOnLogin(user.uid);
   } else {
-    statusEl.textContent = "Not signed in (local only)";
+    document.getElementById("auth-status-text").innerText =
+      "Not signed in (local only)";
     loadLocalDB();
   }
+
   renderLists();
   newCard();
 });
 
-/* -------------------------------
+/* ============================================================
    INITIAL LOAD
---------------------------------*/
+============================================================ */
 loadLocalDB();
 renderLists();
 newCard();
-loadGeminiKey();
 
-/* -------------------------------
-   TABS
---------------------------------*/
-document.querySelectorAll(".tab").forEach(el => {
-  el.onclick = () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    el.classList.add("active");
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.getElementById(el.dataset.tab).classList.add("active");
-  };
-});
 </script>
-
 </body>
+
 </html>
