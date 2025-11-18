@@ -290,10 +290,11 @@
 .choice-btn:hover {
   background: #f4f4ff;
 }
-      transform: translateY(1px);
-      box-shadow: 0 2px 6px rgba(108,99,255,0.2);
-    }
 
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(108,99,255,0.2);
+}
     /* =========================================
        PRACTICE ARCADE — TILE GRID
     ========================================== */
@@ -1599,6 +1600,9 @@ window.showVisualVocab = function () {
     `)
     .join("");
 };
+
+window.savePracticeSettings = function () {
+  document.getElementById("settings-status").innerText = "Settings saved!";
 };
 
 window.savePracticeSettings = function () {
