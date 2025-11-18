@@ -524,11 +524,74 @@
   <!-- TABS -->
   <div class="tab-bar">
     <span class="tab active" data-tab="manage">Manage Words</span>
+    <span class="tab" data-tab="missed">Missed Words</span>
     <span class="tab" data-tab="flash">Flashcards</span>
     <span class="tab" data-tab="ai">AI Tutor (Gemini)</span>
     <span class="tab" data-tab="arcade">Practice Arcade 🎯</span>
   </div>
 
+  <!-- TAB CONTENT: MISSED WORDS -->
+  <div id="missed" class="tab-content">
+    <h2>Missed Words Trainer</h2>
+
+    <p style="color:#555;margin-bottom:0.75rem;">
+      These are words you've gotten wrong at least once. Use this tab to attack your weak spots.
+    </p>
+
+    <!-- Missed words list -->
+    <div class="db-row" style="margin-top:0.8rem;">
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-card-title">Missed Words</div>
+          <div class="db-card-stats" id="missed-stats">Stats: no attempts yet</div>
+        </div>
+        <div id="missed-list" class="word-list"></div>
+      </div>
+    </div>
+
+    <!-- Missed-only flashcards -->
+    <h3 style="margin-top:1.8rem;">Flashcards (Missed Only)</h3>
+    <button onclick="newMissedCard()">New Card</button>
+
+    <div id="missed-flashcard" class="flashcard" style="margin-top:1rem;">
+      <div class="flashcard-inner" id="missed-flash-inner">
+        <div class="flashcard-face flashcard-front" id="missed-flash-front">
+          Click "New Card" to begin
+        </div>
+        <div class="flashcard-face flashcard-back" id="missed-flash-back">
+          Click "New Card" to begin
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button onclick="flipMissedCard()" style="flex:1 1 120px;">Flip</button>
+      <button onclick="markMissedRight()" style="flex:1 1 120px;background:#3bc67d;">I got it right</button>
+      <button onclick="markMissedWrong()" style="flex:1 1 120px;background:#ff6f6f;">I got it wrong</button>
+    </div>
+
+    <!-- Missed-only MCQ -->
+    <h3 style="margin-top:1.8rem;">Multiple Choice (Missed Only)</h3>
+    <button onclick="newMissedMCQ()">New Question</button>
+
+    <div id="missed-mcq-question" style="margin-top:1.3rem; font-size:1.1rem;"></div>
+    <div id="missed-mcq-options" style="margin-top:1rem;"></div>
+
+    <!-- Missed-only typing -->
+    <h3 style="margin-top:1.8rem;">Typing Practice (Missed Only)</h3>
+    <button onclick="startMissedTyping()">Begin Typing Practice</button>
+
+    <div id="missed-typing-prompt" style="margin-top:1.3rem; font-size:1.2rem;"></div>
+
+    <textarea id="missed-typing-input"
+              placeholder="Type Hebrew here (no vowels needed)..."
+              style="margin-top:1.2rem;"></textarea>
+    <button onclick="submitMissedTypingAnswer()">Submit</button>
+
+    <div id="missed-typing-feedback" style="margin-top:1rem;"></div>
+  </div>
+
+  
   <!-- TAB CONTENT: MANAGE WORDS -->
   <div id="manage" class="tab-content active">
     <h2>Manage Your Hebrew Words</h2>
@@ -665,10 +728,6 @@
     <!-- GAME TILE GRID -->
     <div class="arcade-grid">
 
-      <!-- Missed Words (Red) -->
-      <div class="arcade-tile tile-red" data-tool="missed">
-        ❌ Missed Words
-      </div>
 
       <!-- Sentence Builder (Purple) -->
       <div class="arcade-tile tile-purple" data-tool="builder">
@@ -718,15 +777,6 @@
      (These remain hidden until a tile is clicked)
 ================================ -->
 
-<!-- MISS DIRECT COMPREHENSION -->
-<div id="ui-missed" class="arcade-ui" style="display:none;">
-  <h3>❌ Missed Words Practice</h3>
-  <p>These are the words you’ve gotten wrong recently. Practice them until you master each one.</p>
-
-  <button onclick="startMissedPractice()">Begin Practice</button>
-
-  <div id="missed-container" style="margin-top:1rem;"></div>
-</div>
 
 <!-- SENTENCE BUILDER -->
 <div id="ui-builder" class="arcade-ui" style="display:none;">
@@ -975,6 +1025,33 @@ function renderLists() {
   const generalStatsEl = document.getElementById("general-stats");
   const overallStatsEl = document.getElementById("overall-stats");
 
+  // Update Missed Words tab if it exists
+  const missedListEl  = document.getElementById("missed-list");
+  const missedStatsEl = document.getElementById("missed-stats");
+  if (missedListEl && missedStatsEl) {
+    const missed = getMissedWords();
+
+    if (!missed.length) {
+      missedListEl.innerHTML =
+        "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No missed words yet. Get some wrong in practice first 😈</p>";
+      missedStatsEl.textContent = "Stats: no attempts yet";
+    } else {
+      missedListEl.innerHTML = missed.map(w => `
+        <div style="padding:10px;border-bottom:1px solid #eee;">
+          <strong>${w.he}</strong> — ${w.en}
+          ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
+          <div style="font-size:0.8rem;color:#999;margin-top:4px;">
+            Correct: ${w.correct || 0} · Wrong: ${w.wrong || 0}
+          </div>
+        </div>
+      `).join("");
+
+      const s = computeStats(missed);
+      missedStatsEl.textContent =
+        `Stats: ${s.percent}% (${s.correct}/${s.attempts} correct)`;
+    }
+  }
+  
   teacherList.innerHTML = teacherDB.length
     ? teacherDB.map((w,i)=>wordRow("teacher", i, w)).join("")
     : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
@@ -1110,6 +1187,10 @@ function getAllWords() {
   return [...teacherDB, ...generalDB];
 }
 
+  function getMissedWords() {
+  return getAllWords().filter(w => (w.wrong || 0) > 0);
+}
+  
 window.newCard = function () {
   const all = getAllWords();
   if (!all.length) return alert("Add words first.");
@@ -1146,19 +1227,19 @@ window.markRight = function () {
 window.markWrong = function () {
   if (!currentCard) return;
 
+  // mark this word as wrong
   currentCard.wrong++;
-  
-  // add to missed queue
-  if (!missedQueue.includes(currentCard)) {
-    missedQueue.push(currentCard);
-  }
 
+  // save + sync
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
 
+  // update stats + Missed tab list
+  renderLists();
+
+  // move to the next flashcard
   newCard();
 };
-
 /* ============================================================
    MULTIPLE CHOICE (Flashcards tab)
 ============================================================ */
@@ -1208,7 +1289,6 @@ const arcadeTiles = document.querySelectorAll(".arcade-tile, .advanced-item");
 
 const arcadeOutput = document.getElementById("arcade-output");
 const arcadeUIs = {
-  missed: "ui-missed",
   builder: "ui-builder",
   listening: "ui-listening",
   generator: "ui-generator",
@@ -1222,118 +1302,25 @@ const arcadeUIs = {
   settings: "ui-settings"
 };
 
-arcadeTiles.forEach(tile => {
-  tile.addEventListener("click", () => {
+arcadeTiles.forEach(tile=>{
+  tile.addEventListener("click", ()=>{
     const tool = tile.dataset.tool;
     if (!tool) return;
 
-    // hide all tool panels
-    document.querySelectorAll(".arcade-ui").forEach(ui => {
+    // hide all UIs
+    document.querySelectorAll(".arcade-ui").forEach(ui=>{
       ui.style.display = "none";
     });
 
-    // show the one we clicked (no DOM moving)
+    // show selected one in its original place
     const id = arcadeUIs[tool];
     const ui = document.getElementById(id);
     if (ui) {
       ui.style.display = "block";
-      // optional: scroll down to the active tool
-      arcadeOutput.scrollIntoView({ behavior: "smooth", block: "start" });
+      ui.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
 });
-
-/* ============================================================
-   MISSED WORDS PRACTICE (real quiz)
-============================================================ */
-let missedQueue = [];
-let missedCurrent = null;
-let missedChoices = [];
-
-window.startMissedPractice = function () {
-  const box = document.getElementById("missed-container");
-
-  if (!missedQueue.length) {
-    box.innerHTML = "<p>No missed words yet! Get some wrong in flashcards first 😈</p>";
-    return;
-  }
-
-  nextMissedQuestion();
-};
-
-function nextMissedQuestion() {
-  const box = document.getElementById("missed-container");
-
-  if (!missedQueue.length) {
-    box.innerHTML = "<p>Nice! You’ve reviewed all your missed words for now 🎉</p>";
-    return;
-  }
-
-  const all = getAllWords();
-  if (!all.length) {
-    box.innerHTML = "<p>Add some words first.</p>";
-    return;
-  }
-
-  // Pick a random word from the missed queue
-  missedCurrent = missedQueue[Math.floor(Math.random() * missedQueue.length)];
-
-  // Build choices: 1 correct + up to 3 wrong
-  const choices = [missedCurrent];
-  while (choices.length < 4 && choices.length < all.length) {
-    const c = all[Math.floor(Math.random() * all.length)];
-    if (!choices.includes(c)) choices.push(c);
-  }
-
-  // Shuffle
-  for (let i = choices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [choices[i], choices[j]] = [choices[j], choices[i]];
-  }
-  missedChoices = choices;
-
-  box.innerHTML = `
-    <div class="missed-q">
-      <div style="font-size:1.05rem;margin-bottom:0.5rem;">
-        What is the meaning of: <strong>${missedCurrent.he}</strong>?
-      </div>
-      <div id="missed-options"></div>
-      <div id="missed-feedback" style="margin-top:0.6rem;font-size:0.9rem;"></div>
-    </div>
-  `;
-
-  const optBox = document.getElementById("missed-options");
-  optBox.innerHTML = choices
-    .map((c, idx) => `
-      <button class="choice-btn" style="margin-top:6px;" onclick="answerMissed(${idx})">
-        ${c.en}
-      </button>
-    `)
-    .join("");
-}
-
-window.answerMissed = function (index) {
-  const fb = document.getElementById("missed-feedback");
-  if (!missedCurrent || !missedChoices[index]) return;
-
-  const chosen = missedChoices[index];
-
-  if (chosen === missedCurrent) {
-    fb.textContent = "✅ Correct!";
-    missedCurrent.correct = (missedCurrent.correct || 0) + 1;
-    // Remove from queue on success
-    missedQueue = missedQueue.filter(w => w !== missedCurrent);
-  } else {
-    fb.textContent = `❌ Not quite. Correct: ${missedCurrent.en}`;
-    missedCurrent.wrong = (missedCurrent.wrong || 0) + 1;
-    // Keep it in the queue so it appears again
-  }
-
-  saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid);
-
-  setTimeout(nextMissedQuestion, 900);
-};
 
 /* ============================================================
    SENTENCE BUILDER (placeholder)
@@ -1449,7 +1436,6 @@ window.submitTypingAnswer = function () {
     return;
   }
 
-  // Compare both answers with vowels removed
   const user = stripNikud(userRaw);
   const correct = stripNikud(correctRaw);
 
@@ -1463,6 +1449,7 @@ window.submitTypingAnswer = function () {
 
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists(); // keep stats + Missed tab updated
 
   setTimeout(() => {
     startTypingMode();
@@ -1530,6 +1517,173 @@ window.answerArcadeMCQ = function (index) {
 
   setTimeout(startArcadeMCQ, 1000);
 };
+
+/* ============================================================
+   MISSED WORDS TAB PRACTICE
+============================================================ */
+let missedCardCurrent = null;
+
+window.newMissedCard = function () {
+  const missed = getMissedWords();
+  if (!missed.length) {
+    alert("No missed words yet.");
+    return;
+  }
+
+  missedCardCurrent = missed[Math.floor(Math.random() * missed.length)];
+
+  const front = document.getElementById("missed-flash-front");
+  const back  = document.getElementById("missed-flash-back");
+  const card  = document.getElementById("missed-flashcard");
+
+  front.innerText = missedCardCurrent.he;
+  back.innerText  = missedCardCurrent.en +
+    (missedCardCurrent.tr ? ` (${missedCardCurrent.tr})` : "");
+
+  card.classList.remove("flipped");
+};
+
+window.flipMissedCard = function () {
+  document.getElementById("missed-flashcard").classList.toggle("flipped");
+};
+
+window.markMissedRight = function () {
+  if (!missedCardCurrent) return;
+  missedCardCurrent.correct = (missedCardCurrent.correct || 0) + 1;
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+  newMissedCard();
+};
+
+window.markMissedWrong = function () {
+  if (!missedCardCurrent) return;
+  missedCardCurrent.wrong = (missedCardCurrent.wrong || 0) + 1;
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+  newMissedCard();
+};
+
+/* --- Missed-only MCQ --- */
+let missedMCQCurrent = null;
+let missedMCQChoices = [];
+
+window.newMissedMCQ = function () {
+  const missed = getMissedWords();
+  if (missed.length < 2) {
+    alert("Need at least 2 missed words.");
+    return;
+  }
+
+  missedMCQCurrent = missed[Math.floor(Math.random() * missed.length)];
+  const choices = [missedMCQCurrent];
+
+  while (choices.length < 4 && choices.length < missed.length) {
+    const c = missed[Math.floor(Math.random() * missed.length)];
+    if (!choices.includes(c)) choices.push(c);
+  }
+
+  // shuffle
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  missedMCQChoices = choices;
+
+  const qEl = document.getElementById("missed-mcq-question");
+  const optEl = document.getElementById("missed-mcq-options");
+
+  qEl.innerHTML = `What is the meaning of: <strong>${missedMCQCurrent.he}</strong>?`;
+  optEl.innerHTML = choices
+    .map((c, idx) => `
+      <button class="choice-btn" style="margin-top:6px;" onclick="answerMissedMCQ(${idx})">
+        ${c.en}
+      </button>
+    `)
+    .join("");
+};
+
+window.answerMissedMCQ = function (index) {
+  const chosen = missedMCQChoices[index];
+  if (!missedMCQCurrent || !chosen) return;
+
+  const qEl = document.getElementById("missed-mcq-question");
+
+  if (chosen === missedMCQCurrent) {
+    qEl.innerHTML += "<div style='margin-top:0.4rem;color:#18a34a;'>✅ Correct!</div>";
+    missedMCQCurrent.correct = (missedMCQCurrent.correct || 0) + 1;
+  } else {
+    qEl.innerHTML += `<div style='margin-top:0.4rem;color:#b91c1c;'>❌ Wrong. Correct: ${missedMCQCurrent.en}</div>`;
+    missedMCQCurrent.wrong = (missedMCQCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(newMissedMCQ, 1000);
+};
+
+/* --- Missed-only typing --- */
+let missedTypingCurrent = null;
+
+window.startMissedTyping = function () {
+  const missed = getMissedWords();
+  const promptEl = document.getElementById("missed-typing-prompt");
+  const inputEl  = document.getElementById("missed-typing-input");
+  const fbEl     = document.getElementById("missed-typing-feedback");
+
+  if (!missed.length) {
+    promptEl.innerText = "No missed words yet.";
+    return;
+  }
+
+  missedTypingCurrent = missed[Math.floor(Math.random() * missed.length)];
+  promptEl.innerHTML = `
+    Translate into Hebrew (no vowels needed):<br>
+    <strong>${missedTypingCurrent.en}</strong>
+  `;
+  inputEl.value = "";
+  fbEl.innerText = "";
+  inputEl.focus();
+};
+
+window.submitMissedTypingAnswer = function () {
+  const inputEl = document.getElementById("missed-typing-input");
+  const fbEl    = document.getElementById("missed-typing-feedback");
+
+  if (!missedTypingCurrent) {
+    fbEl.innerText = "Click 'Begin Typing Practice' first.";
+    return;
+  }
+
+  const userRaw    = inputEl.value.trim();
+  const correctRaw = missedTypingCurrent.he.trim();
+
+  if (!userRaw) {
+    fbEl.innerText = "Type your answer first.";
+    return;
+  }
+
+  const user    = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  if (user === correct) {
+    fbEl.innerHTML = "✅ Correct!";
+    missedTypingCurrent.correct = (missedTypingCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    missedTypingCurrent.wrong = (missedTypingCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(startMissedTyping, 1000);
+};
+  
 /* ============================================================
    ADVANCED TOOLS (placeholder)
 ============================================================ */
