@@ -184,7 +184,42 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-   
+   /* =========================================
+   TAB BAR (bigger, more visible)
+========================================= */
+.tab-bar {
+  display: flex;
+  gap: 12px;
+  margin: 1.2rem 0 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tab {
+  background: #ececff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--purple);
+  border: 2px solid transparent;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  letter-spacing: 0.02em;
+}
+
+.tab:hover {
+  background: #dedcff;
+  transform: translateY(-2px);
+}
+
+.tab.active {
+  background: white;
+  color: var(--purple);
+  border-color: white;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+}
 
     /* =========================================
        TAB CONTENT
