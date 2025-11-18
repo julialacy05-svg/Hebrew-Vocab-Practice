@@ -36,7 +36,7 @@
     header small {
       display: block;
       font-size: 0.8rem;
-      opacity: 0.8;
+      opacity: 0.85;
       margin-top: 0.15rem;
     }
     main {
@@ -189,7 +189,7 @@
       margin: 0;
       font-size: 0.8rem;
       padding: 6px 8px;
-      background: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.9);
     }
     .auth-bar button {
       width: auto;
@@ -203,7 +203,6 @@
       flex: 1 1 160px;
     }
 
-    /* Manage DB layout like your screenshot */
     .manage-subtitle {
       font-size: 0.85rem;
       color: #6b7280;
@@ -502,7 +501,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// Your Firebase config (you already set this up)
 const firebaseConfig = {
   apiKey: "AIzaSyDWXr9Ugag1WhzHBak7AaMiN94EQ9UXls4",
   authDomain: "hebrew-vocab-fae49.firebaseapp.com",
@@ -541,7 +539,7 @@ function saveLocalDB() {
   localStorage.setItem(GENERAL_KEY, JSON.stringify(generalDB));
 }
 
-// Read cloud doc without mutating globals
+// get cloud data without mutating globals
 async function fetchCloudDB(uid) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
@@ -558,44 +556,35 @@ async function saveCloudDB(uid) {
   await setDoc(ref, { teacherDB, generalDB }, { merge: true });
 }
 
-// sync when user logs in: prefer cloud if it has data; otherwise upload local
+// sync behavior on login
 async function syncOnLogin(uid) {
-  // 1. Load whatever is on this device
   loadLocalDB();
   const localTeacher = teacherDB || [];
   const localGeneral = generalDB || [];
   const hadLocal = localTeacher.length > 0 || localGeneral.length > 0;
 
-  // 2. Check cloud
   const cloud = await fetchCloudDB(uid);
 
   if (!cloud) {
-    // No cloud doc yet: if local exists, push it
+    // no cloud doc yet
     teacherDB = localTeacher;
     generalDB = localGeneral;
-    if (hadLocal) {
-      await saveCloudDB(uid);
-    }
+    if (hadLocal) await saveCloudDB(uid);
   } else {
     const cloudHasData =
       (cloud.teacherDB && cloud.teacherDB.length > 0) ||
       (cloud.generalDB && cloud.generalDB.length > 0);
 
     if (cloudHasData) {
-      // Use cloud as source of truth
       teacherDB = cloud.teacherDB;
       generalDB = cloud.generalDB;
     } else {
-      // Cloud doc is empty but local has stuff → upload local
       teacherDB = localTeacher;
       generalDB = localGeneral;
-      if (hadLocal) {
-        await saveCloudDB(uid);
-      }
+      if (hadLocal) await saveCloudDB(uid);
     }
   }
 
-  // Whatever we ended up with, keep local in sync
   saveLocalDB();
 }
 
@@ -799,10 +788,8 @@ function getFrontText(card, mode) {
 function getBackText(card, mode) {
   const tr = card.tr ? ` (${card.tr})` : "";
   if (mode === "he-to-en") {
-    // Back: English + transliteration
     return card.en + tr;
   } else {
-    // Back: Hebrew + transliteration
     return card.he + tr;
   }
 }
