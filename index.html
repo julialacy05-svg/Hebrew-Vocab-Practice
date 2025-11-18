@@ -1220,13 +1220,15 @@ window.bulkAdd = function () {
   }
 
   saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid);
+if (currentUser) saveCloudDB(currentUser.uid);
 
-  renderLists();
+renderLists();
 
-  document.getElementById("bulk-status").innerHTML =
-    `Added ${added} words.${skipped.length ? " Skipped lines: "+skipped.join(", ") : ""}`;
-};
+document.getElementById("bulk-status").innerHTML =
+  `Added ${added} words.${skipped.length ? " Skipped lines: "+skipped.join(", ") : ""}`;
+
+// NEW LINE – clears the textarea
+document.getElementById("bulk-input").value = "";
 
 /* ============================================================
    FLASHCARDS
