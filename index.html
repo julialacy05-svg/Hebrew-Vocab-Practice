@@ -379,6 +379,52 @@
       color: var(--orange);
     }
 
+    /* Teacher / General database layout */
+.db-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.db-card {
+  flex: 1 1 0;
+  min-width: 260px;
+  background: #fafafa;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  padding: 10px 12px;
+}
+
+/* Header inside each card */
+.db-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.db-card-title {
+  font-weight: 700;
+}
+
+.db-card-stats {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+/* Scrollable word list inside each card */
+.word-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* Overall stats line under both cards */
+.overall-stats {
+  font-size: 0.85rem;
+  color: #666;
+}
+    
   </style>
 </head>
 
@@ -437,11 +483,27 @@
 
     <button onclick="addWord()">Add Word</button>
 
-    <h3 style="margin-top:1.2rem;">Teacher Database</h3>
-    <div id="teacher-list"></div>
+<div class="db-row" style="margin-top:1.5rem;">
 
-    <h3 style="margin-top:1.2rem;">General Database</h3>
-    <div id="general-list"></div>
+  <div class="db-card">
+    <div class="db-card-header">
+      <div class="db-card-title">Teacher Database</div>
+      <div class="db-card-stats" id="teacher-stats">Stats: no attempts yet</div>
+    </div>
+    <div id="teacher-list" class="word-list"></div>
+  </div>
+
+  <div class="db-card">
+    <div class="db-card-header">
+      <div class="db-card-title">General Database</div>
+      <div class="db-card-stats" id="general-stats">Stats: no attempts yet</div>
+    </div>
+    <div id="general-list" class="word-list"></div>
+  </div>
+
+</div>
+
+<div id="overall-stats" class="overall-stats" style="margin-top:0.8rem;"></div>
 
     <div id="overall-stats" class="overall-stats" style="margin-top:1rem;"></div>
 
@@ -848,22 +910,41 @@ function computeStats(db) {
 function renderLists() {
   const teacherList = document.getElementById("teacher-list");
   const generalList = document.getElementById("general-list");
+  const teacherStatsEl = document.getElementById("teacher-stats");
+  const generalStatsEl = document.getElementById("general-stats");
+  const overallStatsEl = document.getElementById("overall-stats");
 
   teacherList.innerHTML = teacherDB.length
     ? teacherDB.map((w,i)=>wordRow("teacher", i, w)).join("")
-    : "<p>No words yet.</p>";
+    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
 
   generalList.innerHTML = generalDB.length
     ? generalDB.map((w,i)=>wordRow("general", i, w)).join("")
-    : "<p>No words yet.</p>";
+    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
 
   const all = [...teacherDB, ...generalDB];
   const t = computeStats(teacherDB);
   const g = computeStats(generalDB);
   const a = computeStats(all);
 
-  document.getElementById("overall-stats").innerHTML =
-    `Teacher: ${t.percent}% | General: ${g.percent}% | Overall: ${a.percent}%`;
+  if (teacherStatsEl) {
+    teacherStatsEl.textContent = t.attempts
+      ? `Stats: ${t.percent}% (${t.correct}/${t.attempts} correct)`
+      : "Stats: no attempts yet";
+  }
+
+  if (generalStatsEl) {
+    generalStatsEl.textContent = g.attempts
+      ? `Stats: ${g.percent}% (${g.correct}/${g.attempts} correct)`
+      : "Stats: no attempts yet";
+  }
+
+  if (overallStatsEl) {
+    overallStatsEl.textContent =
+      `Teacher: ${t.percent}% (${t.correct}/${t.attempts}) · ` +
+      `General: ${g.percent}% (${g.correct}/${g.attempts}) · ` +
+      `Overall: ${a.percent}% (${a.correct}/${a.attempts})`;
+  }
 }
 
 function wordRow(db, index, w) {
