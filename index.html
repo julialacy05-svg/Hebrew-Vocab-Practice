@@ -639,8 +639,6 @@
 
 <div id="overall-stats" class="overall-stats" style="margin-top:0.8rem;"></div>
 
-    <div id="overall-stats" class="overall-stats" style="margin-top:1rem;"></div>
-
     <h3 style="margin-top:1.8rem;">Bulk Import</h3>
     <p class="hint">
       Paste multiple lines like:<br>
@@ -1326,23 +1324,160 @@ arcadeTiles.forEach(tile=>{
    SENTENCE BUILDER (placeholder)
 ============================================================ */
 window.startSentenceBuilder = function () {
-  document.getElementById("builder-target").innerHTML =
-    "<p>(Sentence builder will go here)</p>";
+  const all = getAllWords().filter(w => w.he.trim().split(/\s+/).length > 1);
+  const targetEl = document.getElementById("builder-target");
+  const wordsEl  = document.getElementById("builder-words");
 
-  document.getElementById("builder-words").innerHTML = "";
+  if (!all.length) {
+    targetEl.innerHTML = "<p>Add some multi-word phrases first.</p>";
+    wordsEl.innerHTML = "";
+    return;
+  }
+
+  // pick a random multi-word phrase
+  builderCurrent = all[Math.floor(Math.random() * all.length)];
+  builderWords   = builderCurrent.he.trim().split(/\s+/);
+  builderChosen  = [];
+
+  // build target area + feedback container
+  targetEl.innerHTML = `
+    <div style="margin-bottom:0.4rem;">
+      Arrange the words to form:<br>
+      <span style="font-size:0.95rem;color:#555;">${builderCurrent.en}</span>
+    </div>
+    <div id="builder-target-words"
+         style="min-height:40px;border:1px dashed #ccc;padding:8px;border-radius:10px;"></div>
+    <div id="builder-feedback" style="margin-top:0.4rem;font-size:0.9rem;"></div>
+  `;
+
+  // shuffle the word order
+  const indices = builderWords.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  wordsEl.innerHTML = indices.map(i => `
+    <button class="choice-btn"
+            style="display:inline-block;margin:4px 4px 0 0;"
+            onclick="builderChoose(${i})"
+            id="builder-word-${i}">
+      ${builderWords[i]}
+    </button>
+  `).join("");
 };
 
+window.builderChoose = function (idx) {
+  if (!builderCurrent) return;
+
+  // prevent double-clicking the same word
+  if (builderChosen.includes(idx)) return;
+  builderChosen.push(idx);
+
+  const btn = document.getElementById("builder-word-" + idx);
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = "0.5";
+  }
+
+  const targetWordsEl = document.getElementById("builder-target-words");
+  const chosenText = builderWords[idx];
+
+  const span = document.createElement("span");
+  span.textContent = chosenText + " ";
+  span.style.marginRight = "4px";
+  targetWordsEl.appendChild(span);
+
+  // when finished, check correctness
+  if (builderChosen.length === builderWords.length) {
+    checkSentenceBuilderAnswer();
+  }
+};
+
+function checkSentenceBuilderAnswer() {
+  const fb = document.getElementById("builder-feedback");
+  if (!fb || !builderCurrent) return;
+
+  const built = builderChosen.map(i => builderWords[i]).join(" ");
+  const correct = builderWords.join(" ");
+
+  const builtStripped   = stripNikud(built);
+  const correctStripped = stripNikud(correct);
+
+  if (builtStripped === correctStripped) {
+    fb.style.color = "#18a34a";
+    fb.textContent = "✅ Correct!";
+    builderCurrent.correct = (builderCurrent.correct || 0) + 1;
+  } else {
+    fb.style.color = "#b91c1c";
+    fb.innerHTML = `❌ Not quite.<br>Correct: <strong>${correct}</strong>`;
+    builderCurrent.wrong = (builderCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  // auto-start a new one after a pause
+  setTimeout(startSentenceBuilder, 1500);
+}
 /* ============================================================
    LISTENING MODE (placeholder)
 ============================================================ */
 window.startListeningMode = function () {
-  document.getElementById("listening-feedback").innerHTML =
-    "<p>(Listening mode logic will be added later)</p>";
+  const all = getAllWords();
+  const fbEl = document.getElementById("listening-feedback");
+  const inputEl = document.getElementById("listening-input");
+
+  if (!all.length) {
+    fbEl.innerText = "Add some words first.";
+    return;
+  }
+
+  listeningCurrent = all[Math.floor(Math.random() * all.length)];
+  fbEl.innerHTML = `
+    Listen and type the Hebrew you hear (vowels optional).<br>
+    <span style="font-size:0.9rem;color:#555;">Hint: English meaning — ${listeningCurrent.en}</span>
+  `;
+  inputEl.value = "";
+  inputEl.focus();
+
+  // speak the Hebrew
+  speakHebrew(listeningCurrent.he);
 };
 
 window.submitListeningAnswer = function () {
-  document.getElementById("listening-feedback").innerHTML =
-    "<p>(Listening mode grading soon)</p>";
+  const fbEl = document.getElementById("listening-feedback");
+  const inputEl = document.getElementById("listening-input");
+
+  if (!listeningCurrent) {
+    fbEl.innerText = "Click 'Start Listening' first.";
+    return;
+  }
+
+  const userRaw = inputEl.value.trim();
+  const correctRaw = listeningCurrent.he.trim();
+  if (!userRaw) {
+    fbEl.innerText = "Type what you heard first.";
+    return;
+  }
+
+  const user    = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  if (user === correct) {
+    fbEl.innerHTML = "✅ Correct! (Click 'Start Listening' for another.)";
+    listeningCurrent.correct = (listeningCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    listeningCurrent.wrong = (listeningCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(startListeningMode, 1500);
 };
 
 /* ============================================================
@@ -1386,6 +1521,7 @@ window.generateRandomSentence = function () {
    TYPING MODE (real practice, vowels optional)
 ============================================================ */
 let typingCurrent = null;
+let listeningCurrent = null; 
 
 // Strip Hebrew nikud (vowels & cantillation) so we can compare
 // answers without requiring vowels.
@@ -1398,6 +1534,14 @@ function stripNikud(str) {
     .trim();
 }
 
+function speakHebrew(text) {
+  if (!("speechSynthesis" in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "he-IL";   // use Hebrew voice when available
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+  
 window.startTypingMode = function () {
   const all = getAllWords();
   const promptEl = document.getElementById("typing-prompt");
@@ -1462,6 +1606,11 @@ window.submitTypingAnswer = function () {
 let arcadeMCQCurrent = null;
 let arcadeMCQChoices = [];
 
+// Sentence Builder state
+let builderCurrent = null;
+let builderWords = [];
+let builderChosen = [];
+  
 window.startArcadeMCQ = function () {
   const qEl = document.getElementById("arcade-mcq-question");
   const optEl = document.getElementById("arcade-mcq-options");
@@ -1688,28 +1837,256 @@ window.submitMissedTypingAnswer = function () {
    ADVANCED TOOLS (placeholder)
 ============================================================ */
 window.analyzePatterns = function () {
-  document.getElementById("patterns-output").innerText =
-    "(Pattern analysis coming soon)";
+  const out = document.getElementById("patterns-output");
+  const all = getAllWords();
+  const missed = all.filter(w => (w.wrong || 0) > 0);
+
+  if (!missed.length) {
+    out.innerHTML = "No mistakes recorded yet. Do some practice first.";
+    return;
+  }
+
+  const totalWrong = missed.reduce((s, w) => s + (w.wrong || 0), 0);
+  const totalAttempts = missed.reduce(
+    (s, w) => s + (w.correct || 0) + (w.wrong || 0),
+    0
+  );
+
+  // hardest words = most wrong answers
+  const hardest = [...missed].sort((a, b) => (b.wrong || 0) - (a.wrong || 0)).slice(0, 5);
+
+  // approximate “tricky letter” impact
+  const trickyLetters = {
+    "א/ע": w => /[אע]/.test(w.he),
+    "ש/ס": w => /[שס]/.test(w.he),
+    "ב/ו": w => /[בו]/.test(w.he),
+    "ח/כ": w => /[חכ]/.test(w.he)
+  };
+
+  let trickyStats = [];
+  for (const label in trickyLetters) {
+    const filterFn = trickyLetters[label];
+    const subset = missed.filter(filterFn);
+    if (!subset.length) continue;
+    const wrong = subset.reduce((s, w) => s + (w.wrong || 0), 0);
+    trickyStats.push({ label, wrong });
+  }
+  trickyStats.sort((a, b) => b.wrong - a.wrong);
+
+  out.innerHTML = `
+    <div style="margin-bottom:0.5rem;">
+      Total mistakes on words: <strong>${totalWrong}</strong> across
+      <strong>${totalAttempts}</strong> attempts.
+    </div>
+
+    <div style="margin-top:0.6rem;">
+      <strong>Top trouble words:</strong>
+      <ul style="margin-top:0.4rem;">
+        ${hardest.map(w => `
+          <li>
+            <strong>${w.he}</strong> — ${w.en}
+            <span style="font-size:0.85rem;color:#666;">
+              (Correct: ${w.correct || 0}, Wrong: ${w.wrong || 0})
+            </span>
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+
+    <div style="margin-top:0.8rem;">
+      <strong>Tricky letter patterns (approx):</strong>
+      <ul style="margin-top:0.4rem;">
+        ${
+          trickyStats.length
+            ? trickyStats.map(t => `
+              <li>${t.label}: ${t.wrong} wrong answers on words containing these letters.</li>
+            `).join("")
+            : "<li>No clear tricky-letter pattern yet.</li>"
+        }
+      </ul>
+    </div>
+
+    <div style="margin-top:0.8rem;font-size:0.85rem;color:#555;">
+      Tip: Focus your practice on the top trouble words and tricky letter groups.
+      The Missed Words tab is perfect for that.
+    </div>
+  `;
 };
 
 window.vowelize = function () {
-  document.getElementById("vowelizer-output").innerText =
-    "(Auto vowelizer coming)";
+  const inputEl = document.getElementById("vowelizer-input");
+  const out = document.getElementById("vowelizer-output");
+  const raw = inputEl.value.trim();
+
+  if (!raw) {
+    out.innerText = "Type a Hebrew word or phrase first.";
+    return;
+  }
+
+  const target = stripNikud(raw);
+  const all = getAllWords();
+
+  // find exact matches ignoring vowels
+  const matches = all.filter(w => stripNikud(w.he) === target);
+
+  if (!matches.length) {
+    out.innerHTML = `
+      No exact match found in your vocab.<br>
+      I can only auto-vowelize words that are already saved with vowels.
+    `;
+    return;
+  }
+
+  // choose the most practiced word as the best match
+  matches.sort((a, b) => ((b.correct || 0) + (b.wrong || 0)) -
+                         ((a.correct || 0) + (a.wrong || 0)));
+  const best = matches[0];
+
+  out.innerHTML = `
+    Closest match from your database:<br>
+    <strong>${best.he}</strong> — ${best.en}
+    ${best.tr ? `<div style="font-size:0.9rem;color:#555;">(${best.tr})</div>` : ""}
+  `;
 };
+
+/* ============================================================
+   ADAPTIVE DIFFICULTY
+============================================================ */
+let adaptiveCurrent = null;  
 
 window.startAdaptive = function () {
-  document.getElementById("adaptive-output").innerText =
-    "(Adaptive difficulty coming)";
+  const out = document.getElementById("adaptive-output");
+  const all = getAllWords();
+
+  // "hard" words = at least 1 wrong, sorted by (wrong - correct) descending
+  const hard = all
+    .filter(w => (w.wrong || 0) > 0)
+    .sort((a, b) => ((b.wrong || 0) - (b.correct || 0)) -
+                    ((a.wrong || 0) - (a.correct || 0)));
+
+  if (!hard.length) {
+    out.innerHTML = "No mistake history yet — practice first, then come back.";
+    return;
+  }
+
+  adaptiveCurrent = hard[0]; // hardest word
+
+  out.innerHTML = `
+    <div>
+      Translate into Hebrew (vowels optional):<br>
+      <strong>${adaptiveCurrent.en}</strong>
+    </div>
+    <textarea id="adaptive-input" style="margin-top:0.7rem;"></textarea>
+    <button onclick="submitAdaptiveAnswer()" style="margin-top:0.4rem;">Submit</button>
+    <div id="adaptive-feedback" style="margin-top:0.5rem;font-size:0.9rem;"></div>
+  `;
 };
 
+window.submitAdaptiveAnswer = function () {
+  const inputEl = document.getElementById("adaptive-input");
+  const fbEl = document.getElementById("adaptive-feedback");
+  const strictSetting = document.getElementById("setting-strict")?.value || "on";
+
+  if (!adaptiveCurrent) {
+    if (fbEl) fbEl.innerText = "Click 'Start Adaptive Practice' first.";
+    return;
+  }
+
+  const userRaw = (inputEl?.value || "").trim();
+  const correctRaw = adaptiveCurrent.he.trim();
+
+  if (!userRaw) {
+    if (fbEl) fbEl.innerText = "Type your answer first.";
+    return;
+  }
+
+  const user    = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  const isCorrect = user === correct; // still strict; we just use the toggle for future flexibility
+
+  if (isCorrect) {
+    fbEl.innerHTML = "✅ Correct! Picking another hard word...";
+    adaptiveCurrent.correct = (adaptiveCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    adaptiveCurrent.wrong = (adaptiveCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(startAdaptive, 1500);
+};
+
+let convoPromptWord = null;
+
 window.startConversation = function () {
-  document.getElementById("conversation-chat").innerHTML =
-    "<p>(Conversation simulator coming soon)</p>";
+  const chat = document.getElementById("conversation-chat");
+  const all = getAllWords();
+
+  if (!all.length) {
+    chat.innerHTML = "Add some words first, then we can build sentences with them.";
+    return;
+  }
+
+  convoPromptWord = all[Math.floor(Math.random() * all.length)];
+  chat.innerHTML = `
+    <div class="chat-msg-ai">
+      <span>
+        Write a short sentence in Hebrew using this word: <strong>${convoPromptWord.he}</strong>
+        (${convoPromptWord.en})
+      </span>
+    </div>
+  `;
 };
 
 window.sendConversation = function () {
-  document.getElementById("conversation-chat").innerHTML +=
-    "<div><em>(Your message sent — logic soon)</em></div>";
+  const inputEl = document.getElementById("conversation-input");
+  const chat = document.getElementById("conversation-chat");
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  // show user message
+  const userDiv = document.createElement("div");
+  userDiv.className = "chat-msg-user";
+  const span = document.createElement("span");
+  span.textContent = text;
+  userDiv.appendChild(span);
+  chat.appendChild(userDiv);
+
+  inputEl.value = "";
+
+  // analyze which words from your DB you actually used
+  const strippedMsg = stripNikud(text);
+  const all = getAllWords();
+  const used = all.filter(w => strippedMsg.includes(stripNikud(w.he)));
+
+  const aiDiv = document.createElement("div");
+  aiDiv.className = "chat-msg-ai";
+
+  let feedback = "";
+  if (!used.length) {
+    feedback = "I didn't recognize any of your saved vocab in that sentence. Try to include at least one known word.";
+  } else {
+    feedback = "Nice! I recognized these words: " +
+      used.map(w => `${w.he} (${w.en})`).join(", ");
+  }
+
+  // new prompt
+  const nextPrompt = all[Math.floor(Math.random() * all.length)];
+  convoPromptWord = nextPrompt;
+
+  const aiSpan = document.createElement("span");
+  aiSpan.innerHTML = `
+    ${feedback}<br><br>
+    Next: write another sentence in Hebrew using <strong>${nextPrompt.he}</strong> (${nextPrompt.en}).
+  `;
+  aiDiv.appendChild(aiSpan);
+  chat.appendChild(aiDiv);
+
+  chat.scrollTop = chat.scrollHeight;
 };
 
 
@@ -1717,9 +2094,6 @@ window.savePracticeSettings = function () {
   document.getElementById("settings-status").innerText = "Settings saved!";
 };
 
-window.savePracticeSettings = function () {
-  document.getElementById("settings-status").innerText = "Settings saved!";
-};
 
 /* ============================================================
    GEMINI AI SETUP (clean base)
