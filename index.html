@@ -1201,14 +1201,24 @@ function getAllWords() {
   
 window.newCard = function () {
   const all = getAllWords();
-  if (!all.length) return alert("Add words first.");
-
-  currentCard = all[Math.floor(Math.random()*all.length)];
-  const mode = document.getElementById("flash-mode").value;
 
   const front = document.getElementById("flashcard-front");
-  const back = document.getElementById("flashcard-back");
-  const card = document.getElementById("flashcard");
+  const back  = document.getElementById("flashcard-back");
+  const card  = document.getElementById("flashcard");
+
+  // If there are no words yet, show a friendly message instead of an alert
+  if (!all.length) {
+    if (front && back && card) {
+      front.innerText = "Add some words in the Manage Words tab first 🙂";
+      back.innerText  = "Once you’ve added words, click “New Card” again.";
+      card.classList.remove("flipped");
+    }
+    return;
+  }
+
+  // Normal behavior once there *are* words
+  currentCard = all[Math.floor(Math.random() * all.length)];
+  const mode = document.getElementById("flash-mode").value;
 
   front.innerText = (mode === "he-to-en") ? currentCard.he : currentCard.en;
   back.innerText = (mode === "he-to-en")
