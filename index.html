@@ -706,7 +706,6 @@
         <div class="advanced-item" data-tool="vowelizer">🔡 Auto-Vowelizer</div>
         <div class="advanced-item" data-tool="adaptive">📈 Adaptive Difficulty</div>
         <div class="advanced-item" data-tool="conversation">🗣️ Conversation Simulator</div>
-        <div class="advanced-item" data-tool="visual">🎨 Visual Vocabulary Mode</div>
         <div class="advanced-item" data-tool="settings">⚙️ Practice Settings</div>
       </div>
     </div>
@@ -835,15 +834,6 @@
   <button onclick="sendConversation()">Send</button>
 </div>
 
-<!-- VISUAL VOCABULARY -->
-<div id="ui-visual" class="arcade-ui" style="display:none;">
-  <h3>🎨 Visual Vocabulary Mode</h3>
-  <p>Learn words with emojis or illustrative icons.</p>
-
-  <button onclick="showVisualVocab()">Show Visual Cards</button>
-
-  <div id="visual-cards" style="margin-top:1.3rem;"></div>
-</div>
 
 <!-- SETTINGS -->
 <div id="ui-settings" class="arcade-ui" style="display:none;">
@@ -1229,7 +1219,6 @@ const arcadeUIs = {
   vowelizer: "ui-vowelizer",
   adaptive: "ui-adaptive",
   conversation: "ui-conversation",
-  visual: "ui-visual",
   settings: "ui-settings"
 };
 
@@ -1555,48 +1544,6 @@ window.sendConversation = function () {
     "<div><em>(Your message sent — logic soon)</em></div>";
 };
 
-window.showVisualVocab = function () {
-  const box = document.getElementById("visual-cards");
-  const all = getAllWords();
-
-  if (!all.length) {
-    box.innerText = "Add some words first.";
-    return;
-  }
-
-  const emojiFor = (en) => {
-    const e = en.toLowerCase();
-    if (e.includes("day")) return "☀️";
-    if (e.includes("night")) return "🌙";
-    if (e.includes("house") || e.includes("home")) return "🏠";
-    if (e.includes("walk") || e.includes("go")) return "🚶";
-    if (e.includes("eat") || e.includes("food")) return "🍽️";
-    if (e.includes("drink")) return "🥤";
-    if (e.includes("name")) return "📛";
-    if (e.includes("write")) return "✍️";
-    if (e.includes("sleep")) return "😴";
-    return "📘";
-  };
-
-  box.innerHTML = all
-    .map(w => `
-      <div style="
-        display:inline-block;
-        padding:10px 14px;
-        margin:6px;
-        border-radius:14px;
-        background:#ffffff;
-        box-shadow:0 4px 10px rgba(0,0,0,0.08);
-        min-width:120px;
-      ">
-        <div style="font-size:1.5rem;margin-bottom:4px;">${emojiFor(w.en)}</div>
-        <div style="font-weight:700;">${w.he}</div>
-        ${w.tr ? `<div style="font-size:0.85rem;color:#777;">${w.tr}</div>` : ""}
-        <div style="font-size:0.85rem;color:#555;">${w.en}</div>
-      </div>
-    `)
-    .join("");
-};
 
 window.savePracticeSettings = function () {
   document.getElementById("settings-status").innerText = "Settings saved!";
