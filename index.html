@@ -5,141 +5,337 @@
   <title>Hebrew Vocab Trainer + AI Tutor (Cloud Sync)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      --teacher-color: #6366f1;
+      --general-color: #fb923c;
+      --accent-pink: #ec4899;
+      --accent-green: #22c55e;
+      --bg-soft: #f5f5ff;
+    }
     body {
-      font-family: Arial, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       margin: 0;
       padding: 0;
-      background: #f0f0f0;
+      background: radial-gradient(circle at top left, #e0f2fe, #f5f3ff 40%, #fef2f2);
+      color: #111827;
     }
     header {
-      background: #2b2d42;
+      background: linear-gradient(90deg, #4f46e5, #ec4899);
       color: white;
-      padding: 1rem;
+      padding: 1.1rem 1.5rem;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.4);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    header small {
+      display: block;
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 0.15rem;
     }
     main {
-      max-width: 900px;
-      margin: auto;
-      background: white;
-      padding: 1rem;
-      margin-top: 1rem;
-      margin-bottom: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 3px 7px rgba(0,0,0,0.2);
+      max-width: 960px;
+      margin: 1rem auto 2.5rem;
+      background: rgba(255,255,255,0.98);
+      padding: 1.25rem;
+      border-radius: 20px;
+      box-shadow: 0 14px 40px rgba(15,23,42,0.25);
+      backdrop-filter: blur(10px);
+    }
+    .tab-bar {
+      margin-bottom: 0.75rem;
     }
     .tab {
       display: inline-block;
-      padding: 8px 14px;
-      margin: 3px;
-      border-radius: 6px;
-      background: #e0e0e0;
+      padding: 8px 16px;
+      margin: 0 4px 4px 0;
+      border-radius: 999px;
+      background: #e5e7eb;
       cursor: pointer;
+      font-size: 0.85rem;
+      border: 1px solid transparent;
+      user-select: none;
     }
     .tab.active {
-      background: #2b2d42;
+      background: #111827;
       color: white;
+      border-color: #111827;
     }
     .tab-content {
       display: none;
+      margin-top: 0.75rem;
     }
     .tab-content.active {
       display: block;
-      margin-top: 1rem;
     }
     input, textarea, select, button {
       width: 100%;
-      padding: 8px;
+      padding: 9px 10px;
       margin-top: 6px;
       margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid #999;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
       box-sizing: border-box;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #374151;
+      display: block;
+      margin-top: 4px;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 1px #4f46e5;
+      background: #f9fafb;
     }
     button {
-      background: #2b2d42;
+      background: #4f46e5;
       color: white;
       cursor: pointer;
+      font-weight: 500;
+      border: none;
+      transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
+      box-shadow: 0 4px 10px rgba(79,70,229,0.35);
     }
     button:hover {
-      background: #1f2030;
+      background: #4338ca;
+      box-shadow: 0 6px 16px rgba(79,70,229,0.45);
+    }
+    button:active {
+      transform: scale(0.98);
+      box-shadow: 0 3px 8px rgba(79,70,229,0.35);
     }
     .flashcard {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 20px;
+      border-radius: 16px;
+      padding: 24px 16px;
       text-align: center;
-      background: #fafafa;
-      min-height: 50px;
+      background: radial-gradient(circle at top, #e0f2fe, #f9fafb 55%);
+      min-height: 68px;
+      box-shadow: inset 0 0 0 1px #e5e7eb;
+      font-size: 1.1rem;
     }
     .choice-btn {
       width: 100%;
       margin-top: 5px;
       padding: 10px;
-      border-radius: 6px;
-      background: #efefef;
-      border: 1px solid #bbb;
+      border-radius: 10px;
+      background: #f3f4ff;
+      border: 1px solid #e5e7ff;
       cursor: pointer;
       box-sizing: border-box;
+      text-align: left;
+      font-size: 0.95rem;
     }
     .choice-btn:hover {
-      background: #ddd;
+      background: #e0e7ff;
     }
     .chat-box {
-      height: 250px;
+      height: 260px;
       overflow-y: auto;
       padding: 10px;
-      border: 1px solid #ccc;
-      background: #f9f9f9;
-      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      border-radius: 12px;
       margin-bottom: 10px;
     }
     .chat-msg-user {
       text-align: right;
       margin-bottom: 8px;
-      background: #d7e3ff;
-      padding: 6px;
-      border-radius: 6px;
+      background: #dbeafe;
+      padding: 6px 8px;
+      border-radius: 10px;
+      display: inline-block;
+      max-width: 85%;
+      margin-left: auto;
+      white-space: pre-wrap;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.2);
     }
     .chat-msg-ai {
       text-align: left;
       margin-bottom: 8px;
-      background: #ffe5e5;
-      padding: 6px;
-      border-radius: 6px;
+      background: #fee2e2;
+      padding: 6px 8px;
+      border-radius: 10px;
+      display: inline-block;
+      max-width: 85%;
+      white-space: pre-wrap;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.2);
     }
     .auth-bar {
-      background: #edf2ff;
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 10px;
+      background: linear-gradient(135deg, rgba(224,231,255,0.9), rgba(254,226,226,0.9));
+      padding: 8px 10px;
+      border-radius: 16px;
+      margin-bottom: 12px;
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       align-items: center;
+      font-size: 0.8rem;
     }
     .auth-bar input {
       width: auto;
       min-width: 140px;
       flex: 1 1 140px;
       margin: 0;
+      font-size: 0.8rem;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.8);
     }
     .auth-bar button {
       width: auto;
       padding: 6px 10px;
       margin: 0;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
     .auth-status {
       font-size: 0.8rem;
-      color: #333;
-      flex: 1 1 140px;
+      color: #111827;
+      flex: 1 1 160px;
     }
-    @media (max-width: 600px) {
-      .auth-bar {
-        flex-direction: column;
-        align-items: stretch;
+
+    /* Manage DB layout like your screenshot */
+    .manage-subtitle {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      margin-right: 4px;
+    }
+    .badge.teacher {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+    .badge.general {
+      background: #ffedd5;
+      color: #9a3412;
+    }
+    .db-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .db-col {
+      flex: 1 1 260px;
+      background: linear-gradient(135deg, #eef2ff, #fef3c7);
+      padding: 2px;
+      border-radius: 18px;
+    }
+    .db-inner {
+      background: white;
+      border-radius: 16px;
+      padding: 8px 10px;
+      min-height: 80px;
+    }
+    .db-inner.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: #9ca3af;
+    }
+    .db-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .db-header-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .db-header-title.teacher {
+      color: var(--teacher-color);
+    }
+    .db-header-title.general {
+      color: var(--general-color);
+    }
+    .db-stats {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .overall-stats {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: #4b5563;
+      text-align: left;
+    }
+    .word-list {
+      max-height: 230px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .word-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px dashed #e5e7eb;
+      font-size: 0.9rem;
+    }
+    .word-main {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .word-he {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .word-en {
+      font-size: 0.9rem;
+      color: #374151;
+    }
+    .word-tr {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .delete-btn {
+      flex: 0 0 auto;
+      width: auto;
+      padding: 4px 10px;
+      background: #ef4444;
+      color: white;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      box-shadow: 0 3px 8px rgba(248,113,113,0.6);
+    }
+    .delete-btn:hover {
+      background: #dc2626;
+    }
+    .hint {
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin-top: -4px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        margin: 0.5rem;
+        padding: 0.9rem;
       }
-      .auth-bar input, .auth-bar button, .auth-status {
-        width: 100%;
+      header h1 {
+        font-size: 1.1rem;
+      }
+      header small {
+        font-size: 0.75rem;
       }
     }
   </style>
@@ -147,7 +343,8 @@
 <body>
 
 <header>
-  <h1>Hebrew Vocab Trainer + AI Tutor (Cloud Sync)</h1>
+  <h1>Hebrew Vocab Trainer + AI Tutor</h1>
+  <small>Two vocab databases, colorful stats, flashcards, and an AI tutor that knows your words.</small>
 </header>
 
 <main>
@@ -165,7 +362,7 @@
   </div>
 
   <!-- Tab Buttons -->
-  <div>
+  <div class="tab-bar">
     <span class="tab active" data-tab="manage">Manage Words</span>
     <span class="tab" data-tab="flash">Flashcards</span>
     <span class="tab" data-tab="chat">AI Chat Tutor</span>
@@ -173,46 +370,84 @@
 
   <!-- MANAGE WORDS TAB -->
   <div id="manage" class="tab-content active">
-    <h2>Add Word</h2>
-    <input id="hebrew" placeholder="Hebrew" />
-    <input id="translit" placeholder="Transliteration" />
-    <input id="english" placeholder="English" />
+    <h2>Manage Your Hebrew Words</h2>
+    <div class="manage-subtitle">
+      Words are stored in your browser and synced to the cloud when you’re signed in.
+      Databases:
+      <span class="badge teacher">Teacher Database</span>
+      <span class="badge general">General Database</span>
+    </div>
 
-    <select id="db-select">
-      <option value="teacher">Teacher Database</option>
-      <option value="general">General Database</option>
-    </select>
+    <label>
+      Hebrew (עברית)
+      <input id="hebrew" placeholder="e.g. מָה אַתָּה אוֹהֵב לַעֲשׂוֹת" />
+    </label>
+    <label>
+      Transliteration (optional)
+      <input id="translit" placeholder="mah ata ohev la'asot" />
+    </label>
+    <label>
+      English
+      <input id="english" placeholder="What do you like to do? (m)" />
+    </label>
+
+    <label>
+      Target database
+      <select id="db-select">
+        <option value="teacher">Teacher Database</option>
+        <option value="general">General Database</option>
+      </select>
+    </label>
 
     <button onclick="addWord()">Add Word</button>
+    <div class="hint">Tip: keep teacher words and “everything else” separate so you can practice them differently.</div>
 
-    <h3>Teacher Words</h3>
-    <div id="teacher-list"></div>
+    <div class="db-row">
+      <div class="db-col">
+        <div class="db-inner">
+          <div class="db-header">
+            <span class="db-header-title teacher">Teacher Database</span>
+            <span id="teacher-stats" class="db-stats">Stats: no attempts yet</span>
+          </div>
+          <div id="teacher-list" class="word-list"></div>
+        </div>
+      </div>
+      <div class="db-col">
+        <div class="db-inner">
+          <div class="db-header">
+            <span class="db-header-title general">General Database</span>
+            <span id="general-stats" class="db-stats">Stats: no attempts yet</span>
+          </div>
+          <div id="general-list" class="word-list"></div>
+        </div>
+      </div>
+    </div>
+    <div id="overall-stats" class="overall-stats"></div>
 
-    <h3>General Words</h3>
-    <div id="general-list"></div>
-
-    <!-- BULK ADD SECTION -->
-    <h3>Bulk Add Words</h3>
-    <p>
-      One entry per line. Use commas like:<br />
-      <code>שלום, shalom, hello</code><br />
-      <code>מה נשמע, ma nishma, how are you</code><br />
-      You can also skip transliteration:<br />
-      <code>תפוח, apple</code> (Hebrew, English)
+    <h3>Bulk import words (text)</h3>
+    <p style="font-size:0.82rem;color:#4b5563;margin-top:0;">
+      Paste many words at once. Current <strong>target database</strong> (above) will be used.<br/>
+      Formats (one entry per line):<br/>
+      <code>Hebrew, Transliteration, English</code><br/>
+      <code>Hebrew, English</code><br/>
+      You can also use semicolon or tab instead of commas.
     </p>
-    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;תפוח, tapuach, apple"></textarea>
+    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה נשמע, ma nishma, how are you&#10;תפוח, apple"></textarea>
     <button onclick="bulkAdd()">Bulk Add to Selected Database</button>
-    <div id="bulk-status" style="font-size:0.85rem; color:#555; margin-top:4px;"></div>
+    <div id="bulk-status" style="font-size:0.8rem; color:#555; margin-top:4px;"></div>
   </div>
 
   <!-- FLASHCARDS TAB -->
   <div id="flash" class="tab-content">
-    <h2>Flashcards</h2>
+    <h2>Flashcards & Practice</h2>
 
-    <select id="flash-mode">
-      <option value="he-to-en">Hebrew → English</option>
-      <option value="en-to-he">English → Hebrew</option>
-    </select>
+    <label>
+      Mode
+      <select id="flash-mode">
+        <option value="he-to-en">Front: Hebrew → Back: English + transliteration</option>
+        <option value="en-to-he">Front: English → Back: Hebrew + transliteration</option>
+      </select>
+    </label>
 
     <button onclick="newCard()">New Card</button>
 
@@ -220,15 +455,17 @@
       Click "New Card" to start
     </div>
 
-    <button onclick="flipCard()">Flip</button>
-    <button onclick="markRight()">I got it right</button>
-    <button onclick="markWrong()">I got it wrong</button>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <button style="flex:1 1 120px;" onclick="flipCard()">Flip</button>
+      <button style="flex:1 1 120px;background:#22c55e;" onclick="markRight()">I got it right</button>
+      <button style="flex:1 1 120px;background:#ef4444;" onclick="markWrong()">I got it wrong</button>
+    </div>
 
-    <h2>Multiple Choice</h2>
+    <h3 style="margin-top:16px;">Multiple Choice (Hebrew → English)</h3>
     <button onclick="newMCQ()">New Question</button>
 
-    <div id="mcq-question" class="flashcard"></div>
-    <div id="mcq-options"></div>
+    <div id="mcq-question" class="flashcard" style="margin-top:8px;"></div>
+    <div id="mcq-options" style="margin-top:6px;"></div>
   </div>
 
   <!-- CHAT TUTOR TAB -->
@@ -238,7 +475,7 @@
     <input id="apiKey" type="password" placeholder="Groq API Key (gsk_...)" />
     <div id="chat-area" class="chat-box"></div>
 
-    <textarea id="chat-input" placeholder="Type your message..."></textarea>
+    <textarea id="chat-input" placeholder="Ask for practice in Hebrew using your saved words..."></textarea>
 
     <button onclick="sendChat()">Send</button>
   </div>
@@ -265,7 +502,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// ⭐⭐⭐ YOUR FIREBASE CONFIG ⭐⭐⭐
+// Your Firebase config (you already set this up)
 const firebaseConfig = {
   apiKey: "AIzaSyDWXr9Ugag1WhzHBak7AaMiN94EQ9UXls4",
   authDomain: "hebrew-vocab-fae49.firebaseapp.com",
@@ -304,14 +541,16 @@ function saveLocalDB() {
   localStorage.setItem(GENERAL_KEY, JSON.stringify(generalDB));
 }
 
-async function loadCloudDB(uid) {
+// Read cloud doc without mutating globals
+async function fetchCloudDB(uid) {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
-  if (snap.exists()) {
-    const data = snap.data();
-    teacherDB = data.teacherDB || [];
-    generalDB = data.generalDB || [];
-  }
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return {
+    teacherDB: data.teacherDB || [],
+    generalDB: data.generalDB || []
+  };
 }
 
 async function saveCloudDB(uid) {
@@ -319,20 +558,125 @@ async function saveCloudDB(uid) {
   await setDoc(ref, { teacherDB, generalDB }, { merge: true });
 }
 
-function saveAllDB() {
+// sync when user logs in: prefer cloud if it has data; otherwise upload local
+async function syncOnLogin(uid) {
+  // 1. Load whatever is on this device
+  loadLocalDB();
+  const localTeacher = teacherDB || [];
+  const localGeneral = generalDB || [];
+  const hadLocal = localTeacher.length > 0 || localGeneral.length > 0;
+
+  // 2. Check cloud
+  const cloud = await fetchCloudDB(uid);
+
+  if (!cloud) {
+    // No cloud doc yet: if local exists, push it
+    teacherDB = localTeacher;
+    generalDB = localGeneral;
+    if (hadLocal) {
+      await saveCloudDB(uid);
+    }
+  } else {
+    const cloudHasData =
+      (cloud.teacherDB && cloud.teacherDB.length > 0) ||
+      (cloud.generalDB && cloud.generalDB.length > 0);
+
+    if (cloudHasData) {
+      // Use cloud as source of truth
+      teacherDB = cloud.teacherDB;
+      generalDB = cloud.generalDB;
+    } else {
+      // Cloud doc is empty but local has stuff → upload local
+      teacherDB = localTeacher;
+      generalDB = localGeneral;
+      if (hadLocal) {
+        await saveCloudDB(uid);
+      }
+    }
+  }
+
+  // Whatever we ended up with, keep local in sync
   saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid);
 }
 
 /* -------------------------------
-   WORD MANAGEMENT
+   WORD MANAGEMENT + STATS
 --------------------------------*/
-function renderLists() {
-  document.getElementById("teacher-list").innerHTML =
-    teacherDB.map(w => `<div>${w.he} — ${w.en} (✔️${w.correct||0}/✖️${w.wrong||0})</div>`).join("");
+function computeStats(db) {
+  const attempts = db.reduce((sum, w) => sum + (w.correct || 0) + (w.wrong || 0), 0);
+  const correct = db.reduce((sum, w) => sum + (w.correct || 0), 0);
+  const totalWords = db.length;
+  const percent = attempts > 0 ? Math.round((correct / attempts) * 100) : null;
+  return { attempts, correct, totalWords, percent };
+}
 
-  document.getElementById("general-list").innerHTML =
-    generalDB.map(w => `<div>${w.he} — ${w.en} (✔️${w.correct||0}/✖️${w.wrong||0})</div>`).join("");
+function renderLists() {
+  const tList = document.getElementById("teacher-list");
+  const gList = document.getElementById("general-list");
+  const tStatsEl = document.getElementById("teacher-stats");
+  const gStatsEl = document.getElementById("general-stats");
+  const overallEl = document.getElementById("overall-stats");
+
+  // Teacher list
+  if (teacherDB.length === 0) {
+    tList.innerHTML = '<div class="db-inner empty">No words yet in Teacher Database.</div>';
+  } else {
+    tList.innerHTML = teacherDB.map((w, i) => `
+      <div class="word-row">
+        <div class="word-main">
+          <div class="word-he">${w.he}</div>
+          <div class="word-en">${w.en}</div>
+          ${w.tr ? `<div class="word-tr">${w.tr}</div>` : ""}
+        </div>
+        <button class="delete-btn" onclick="deleteWord('teacher', ${i})">Delete</button>
+      </div>
+    `).join("");
+  }
+
+  // General list
+  if (generalDB.length === 0) {
+    gList.innerHTML = '<div class="db-inner empty" style="background:transparent;box-shadow:none;padding:0;">No words yet in General Database.</div>';
+  } else {
+    gList.innerHTML = generalDB.map((w, i) => `
+      <div class="word-row">
+        <div class="word-main">
+          <div class="word-he">${w.he}</div>
+          <div class="word-en">${w.en}</div>
+          ${w.tr ? `<div class="word-tr">${w.tr}</div>` : ""}
+        </div>
+        <button class="delete-btn" onclick="deleteWord('general', ${i})">Delete</button>
+      </div>
+    `).join("");
+  }
+
+  // Stats
+  const tStats = computeStats(teacherDB);
+  const gStats = computeStats(generalDB);
+  const all = [...teacherDB, ...generalDB];
+  const oStats = computeStats(all);
+
+  tStatsEl.textContent =
+    tStats.attempts > 0
+      ? `Stats: ${tStats.percent}% (${tStats.correct}/${tStats.attempts} correct)`
+      : "Stats: no attempts yet";
+
+  gStatsEl.textContent =
+    gStats.attempts > 0
+      ? `Stats: ${gStats.percent}% (${gStats.correct}/${gStats.attempts} correct)`
+      : "Stats: no attempts yet";
+
+  if (all.length === 0) {
+    overallEl.textContent = "No words yet overall.";
+  } else if (oStats.attempts > 0) {
+    overallEl.textContent =
+      `Teacher: ${tStats.percent ?? "–"}% (${tStats.correct}/${tStats.attempts}) · ` +
+      `General: ${gStats.percent ?? "–"}% (${gStats.correct}/${gStats.attempts}) · ` +
+      `Overall: ${oStats.percent}% (${oStats.correct}/${oStats.attempts} correct) · ` +
+      `${all.length} word${all.length === 1 ? "" : "s"} total 🎉`;
+  } else {
+    overallEl.textContent =
+      `Teacher: 0 attempts · General: 0 attempts · Overall: 0 attempts · ${all.length} word${all.length === 1 ? "" : "s"} saved`;
+  }
 }
 
 window.addWord = function () {
@@ -348,7 +692,8 @@ window.addWord = function () {
   if (dbSel === "teacher") teacherDB.push(obj);
   else generalDB.push(obj);
 
-  saveAllDB();
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
   renderLists();
 
   document.getElementById("hebrew").value = "";
@@ -356,7 +701,20 @@ window.addWord = function () {
   document.getElementById("english").value = "";
 };
 
-// BULK ADD WORDS
+window.deleteWord = function (which, index) {
+  if (which === "teacher") {
+    teacherDB.splice(index, 1);
+  } else {
+    generalDB.splice(index, 1);
+  }
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
+  renderLists();
+};
+
+/* -------------------------------
+   BULK IMPORT
+--------------------------------*/
 window.bulkAdd = function () {
   const textarea = document.getElementById("bulk-input");
   const statusEl = document.getElementById("bulk-status");
@@ -376,7 +734,8 @@ window.bulkAdd = function () {
     const raw = lines[i].trim();
     if (!raw) continue;
 
-    const parts = raw.split(",").map(p => p.trim()).filter(Boolean);
+    // allow comma, semicolon or tab as separators
+    const parts = raw.split(/[,;\t]/).map(p => p.trim()).filter(Boolean);
 
     if (parts.length < 2) {
       skipped.push(i + 1);
@@ -388,12 +747,10 @@ window.bulkAdd = function () {
     let en = "";
 
     if (parts.length === 2) {
-      // Hebrew, English
       he = parts[0];
       en = parts[1];
       tr = "";
     } else {
-      // Hebrew, Transliteration, English (if extra commas, join them into English)
       he = parts[0];
       tr = parts[1];
       en = parts.slice(2).join(", ");
@@ -413,7 +770,8 @@ window.bulkAdd = function () {
   }
 
   if (added > 0) {
-    saveAllDB();
+    saveLocalDB();
+    if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
     renderLists();
   }
 
@@ -425,16 +783,36 @@ window.bulkAdd = function () {
 };
 
 /* -------------------------------
-   FLASHCARDS
+   FLASHCARDS (with transliteration on flip)
 --------------------------------*/
 let currentCard = null;
+let currentCardIsFront = true;
+
+function getAllWords() {
+  return [...teacherDB, ...generalDB];
+}
+
+function getFrontText(card, mode) {
+  return mode === "he-to-en" ? card.he : card.en;
+}
+
+function getBackText(card, mode) {
+  const tr = card.tr ? ` (${card.tr})` : "";
+  if (mode === "he-to-en") {
+    // Back: English + transliteration
+    return card.en + tr;
+  } else {
+    // Back: Hebrew + transliteration
+    return card.he + tr;
+  }
+}
 
 window.newCard = function () {
-  let all = [...teacherDB, ...generalDB];
+  let all = getAllWords();
   let flashDiv = document.getElementById("flashcard");
 
   if (all.length === 0) {
-    flashDiv.innerText = "No words!";
+    flashDiv.innerText = "No words yet! Add some on the Manage tab 😊";
     currentCard = null;
     return;
   }
@@ -442,7 +820,8 @@ window.newCard = function () {
   currentCard = all[Math.floor(Math.random() * all.length)];
   let mode = document.getElementById("flash-mode").value;
 
-  flashDiv.innerText = (mode === "he-to-en") ? currentCard.he : currentCard.en;
+  currentCardIsFront = true;
+  flashDiv.innerText = getFrontText(currentCard, mode);
 };
 
 window.flipCard = function () {
@@ -450,23 +829,29 @@ window.flipCard = function () {
   let mode = document.getElementById("flash-mode").value;
   let flashDiv = document.getElementById("flashcard");
 
-  flashDiv.innerText =
-    (mode === "he-to-en")
-      ? (flashDiv.innerText === currentCard.he ? currentCard.en : currentCard.he)
-      : (flashDiv.innerText === currentCard.en ? currentCard.he : currentCard.en);
+  if (currentCardIsFront) {
+    flashDiv.innerText = getBackText(currentCard, mode);
+  } else {
+    flashDiv.innerText = getFrontText(currentCard, mode);
+  }
+  currentCardIsFront = !currentCardIsFront;
 };
 
 window.markRight = function () {
   if (!currentCard) return;
   currentCard.correct = (currentCard.correct || 0) + 1;
-  saveAllDB();
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
+  renderLists();
   newCard();
 };
 
 window.markWrong = function () {
   if (!currentCard) return;
   currentCard.wrong = (currentCard.wrong || 0) + 1;
-  saveAllDB();
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid).catch(() => {});
+  renderLists();
   newCard();
 };
 
@@ -474,12 +859,12 @@ window.markWrong = function () {
    MULTIPLE CHOICE
 --------------------------------*/
 window.newMCQ = function () {
-  let all = [...teacherDB, ...generalDB];
+  let all = getAllWords();
   let qDiv = document.getElementById("mcq-question");
   let optDiv = document.getElementById("mcq-options");
 
   if (all.length < 2) {
-    qDiv.innerText = "Need 2+ words!";
+    qDiv.innerText = "Need at least 2 words in your databases.";
     optDiv.innerHTML = "";
     return;
   }
@@ -494,12 +879,12 @@ window.newMCQ = function () {
 
   qDiv.innerText = correct.he;
   optDiv.innerHTML = choices
-    .map(c => `<button class="choice-btn" onclick="checkMCQ('${c.en}','${correct.en}')">${c.en}</button>`)
+    .map(c => `<button class="choice-btn" onclick="checkMCQ('${c.en.replace(/'/g,"\\'")}','${correct.en.replace(/'/g,"\\'")}')">${c.en}</button>`)
     .join("");
 };
 
 window.checkMCQ = function (chosen, correct) {
-  alert(chosen === correct ? "Correct!" : "Wrong! Correct: " + correct);
+  alert(chosen === correct ? "✅ Correct!" : "❌ Not quite. Correct answer: " + correct);
 };
 
 /* -------------------------------
@@ -528,15 +913,19 @@ window.sendChat = async function () {
 
   chatHistory.push({ role: "user", content: msg });
 
-  let vocab = [...teacherDB, ...generalDB]
-    .map(w => `${w.he} (${w.tr||""}) = ${w.en}`)
+  let vocab = getAllWords()
+    .map(w => `${w.he} (${w.tr || ""}) = ${w.en}`)
     .join("\n");
 
   let system = {
     role: "system",
     content:
-      "You are a Hebrew tutor. Use these words:\n" + vocab +
-      "\nCorrect Hebrew spelling, give transliterations, quiz the user."
+      "You are a strict but friendly Hebrew tutor for a motivated law student. " +
+      "Use ONLY the provided vocabulary list as the primary practice set:\n" +
+      vocab +
+      "\nAlways: (1) correct Hebrew spelling with nikud if relevant, " +
+      "(2) provide transliteration, (3) give short explanations in English, " +
+      "(4) ask comprehension or production questions using these words."
   };
 
   let messages = [system, ...chatHistory];
@@ -603,9 +992,7 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user) {
     statusEl.textContent = "Signed in as " + user.email;
-    loadLocalDB();
-    await loadCloudDB(user.uid);
-    saveLocalDB();
+    await syncOnLogin(user.uid);
   } else {
     statusEl.textContent = "Not signed in (local only)";
     loadLocalDB();
@@ -632,7 +1019,6 @@ document.querySelectorAll(".tab").forEach(el => {
     document.getElementById(el.dataset.tab).classList.add("active");
   };
 });
-
 </script>
 
 </body>
