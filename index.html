@@ -190,6 +190,19 @@
 
     <h3>General Words</h3>
     <div id="general-list"></div>
+
+    <!-- BULK ADD SECTION -->
+    <h3>Bulk Add Words</h3>
+    <p>
+      One entry per line. Use commas like:<br />
+      <code>שלום, shalom, hello</code><br />
+      <code>מה נשמע, ma nishma, how are you</code><br />
+      You can also skip transliteration:<br />
+      <code>תפוח, apple</code> (Hebrew, English)
+    </p>
+    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;תפוח, tapuach, apple"></textarea>
+    <button onclick="bulkAdd()">Bulk Add to Selected Database</button>
+    <div id="bulk-status" style="font-size:0.85rem; color:#555; margin-top:4px;"></div>
   </div>
 
   <!-- FLASHCARDS TAB -->
@@ -252,7 +265,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// ⭐⭐⭐ REPLACE THIS WITH YOUR FIREBASE VALUES ⭐⭐⭐
+// ⭐⭐⭐ YOUR FIREBASE CONFIG ⭐⭐⭐
 const firebaseConfig = {
   apiKey: "AIzaSyDWXr9Ugag1WhzHBak7AaMiN94EQ9UXls4",
   authDomain: "hebrew-vocab-fae49.firebaseapp.com",
@@ -341,6 +354,74 @@ window.addWord = function () {
   document.getElementById("hebrew").value = "";
   document.getElementById("translit").value = "";
   document.getElementById("english").value = "";
+};
+
+// BULK ADD WORDS
+window.bulkAdd = function () {
+  const textarea = document.getElementById("bulk-input");
+  const statusEl = document.getElementById("bulk-status");
+  const dbSel = document.getElementById("db-select").value;
+
+  const text = textarea.value.trim();
+  if (!text) {
+    statusEl.textContent = "Nothing to add. Paste some lines first.";
+    return;
+  }
+
+  const lines = text.split(/\r?\n/);
+  let added = 0;
+  let skipped = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i].trim();
+    if (!raw) continue;
+
+    const parts = raw.split(",").map(p => p.trim()).filter(Boolean);
+
+    if (parts.length < 2) {
+      skipped.push(i + 1);
+      continue;
+    }
+
+    let he = "";
+    let tr = "";
+    let en = "";
+
+    if (parts.length === 2) {
+      // Hebrew, English
+      he = parts[0];
+      en = parts[1];
+      tr = "";
+    } else {
+      // Hebrew, Transliteration, English (if extra commas, join them into English)
+      he = parts[0];
+      tr = parts[1];
+      en = parts.slice(2).join(", ");
+    }
+
+    if (!he || !en) {
+      skipped.push(i + 1);
+      continue;
+    }
+
+    const obj = { he, tr, en, correct: 0, wrong: 0 };
+
+    if (dbSel === "teacher") teacherDB.push(obj);
+    else generalDB.push(obj);
+
+    added++;
+  }
+
+  if (added > 0) {
+    saveAllDB();
+    renderLists();
+  }
+
+  let msg = `Added ${added} word(s) to ${dbSel === "teacher" ? "Teacher" : "General"} Database.`;
+  if (skipped.length > 0) {
+    msg += ` Skipped line(s): ${skipped.join(", ")} (bad format).`;
+  }
+  statusEl.textContent = msg;
 };
 
 /* -------------------------------
