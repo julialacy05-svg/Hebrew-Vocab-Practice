@@ -635,6 +635,7 @@
   <option value="recent">Most Recent</option>
   <option value="grade">Best Grade</option>
   <option value="length">Length (short→long)</option>
+  <option value="length-desc">Length (long→short)</option>
 </select>
   </label>
 
@@ -653,6 +654,7 @@
   <option value="recent">Most Recent</option>
   <option value="grade">Best Grade</option>
   <option value="length">Length (short→long)</option>
+  <option value="length-desc">Length (long→short)</option>
 </select>
   </label>
 
@@ -1262,12 +1264,14 @@ window.sortDB = function (dbName, mode) {
   let db = (dbName === "teacher") ? teacherDB : generalDB;
 
   if (mode === "recent") {
-    db.sort((a, b) => (b.created || 0) - (a.created || 0)); // newest first
+    db.sort((a, b) => (b.created || 0) - (a.created || 0));
   } else if (mode === "grade") {
     const score = w => (w.correct || 0) - (w.wrong || 0);
     db.sort((a, b) => score(b) - score(a));
   } else if (mode === "length") {
     db.sort((a, b) => (a.he || "").length - (b.he || "").length);
+  } else if (mode === "length-desc") {
+    db.sort((a, b) => (b.he || "").length - (a.he || "").length);
   }
 
   if (dbName === "teacher") teacherDB = [...db];
