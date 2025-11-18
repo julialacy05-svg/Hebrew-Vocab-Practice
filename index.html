@@ -790,13 +790,23 @@
 <!-- LISTENING MODE -->
 <div id="ui-listening" class="arcade-ui" style="display:none;">
   <h3>🎧 Listening Mode</h3>
-  <p>Listen to the audio and type the Hebrew you hear.</p>
+  <p>Listen and type the Hebrew you hear. You can replay the audio or reveal a hint if you’re stuck.</p>
 
-  <button onclick="startListeningMode()">Start Listening</button>
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:0.5rem;">
+    <button onclick="startListeningMode()" style="flex:1 1 120px;">Start Listening</button>
+    <button onclick="replayListening()" style="flex:1 1 120px;">Play Again 🔁</button>
+    <button onclick="showListeningHint()" style="flex:1 1 120px;">Show Hint 💡</button>
+  </div>
 
+  <!-- keeping this in case you ever want real audio files later -->
   <audio id="listening-audio" controls style="margin-top:1rem; width:100%; display:none;"></audio>
 
-  <textarea id="listening-input" placeholder="Type what you heard..." style="margin-top:1rem;"></textarea>
+  <div id="listening-hint"
+       style="margin-top:0.8rem; font-size:0.9rem; color:#555; display:none;"></div>
+
+  <textarea id="listening-input"
+            placeholder="Type what you heard..."
+            style="margin-top:1rem;"></textarea>
   <button onclick="submitListeningAnswer()">Submit</button>
 
   <div id="listening-feedback" style="margin-top:1rem;"></div>
@@ -1426,26 +1436,55 @@ function checkSentenceBuilderAnswer() {
 ============================================================ */
 window.startListeningMode = function () {
   const all = getAllWords();
-  const fbEl = document.getElementById("listening-feedback");
+  const fbEl   = document.getElementById("listening-feedback");
   const inputEl = document.getElementById("listening-input");
+  const hintEl  = document.getElementById("listening-hint");
 
   if (!all.length) {
     fbEl.innerText = "Add some words first.";
+    if (hintEl) hintEl.style.display = "none";
     return;
   }
 
   listeningCurrent = all[Math.floor(Math.random() * all.length)];
-  fbEl.innerHTML = `
-    Listen and type the Hebrew you hear (vowels optional).<br>
-    <span style="font-size:0.9rem;color:#555;">Hint: English meaning — ${listeningCurrent.en}</span>
-  `;
+
+  // reset UI each round
+  fbEl.innerHTML = "Listen and type the Hebrew you hear (vowels optional).";
   inputEl.value = "";
   inputEl.focus();
+
+  if (hintEl) {
+    hintEl.style.display = "none";
+    hintEl.textContent = `English meaning: ${listeningCurrent.en}`;
+  }
 
   // speak the Hebrew
   speakHebrew(listeningCurrent.he);
 };
 
+window.replayListening = function () {
+  if (!listeningCurrent) {
+    // optional: tiny nudge
+    const fbEl = document.getElementById("listening-feedback");
+    if (fbEl) fbEl.innerText = "Click 'Start Listening' first.";
+    return;
+  }
+  speakHebrew(listeningCurrent.he);
+};
+
+window.showListeningHint = function () {
+  const hintEl = document.getElementById("listening-hint");
+  if (!hintEl) return;
+
+  if (!listeningCurrent) {
+    hintEl.style.display = "block";
+    hintEl.textContent = "Start a question first using 'Start Listening'.";
+    return;
+  }
+
+  hintEl.style.display = "block"; // reveal the already-set text
+};
+  
 window.submitListeningAnswer = function () {
   const fbEl = document.getElementById("listening-feedback");
   const inputEl = document.getElementById("listening-input");
