@@ -649,10 +649,12 @@
       <code>מה נשמע, how are you</code>
     </p>
 
-    <textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה שלומך, how are you"></textarea>
-    <button onclick="bulkAdd()">Bulk Add</button>
-    <div id="bulk-status" style="font-size:0.85rem;color:#555;"></div>
-  </div>
+<textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה שלומך, how are you"></textarea>
+<button onclick="bulkAdd()">Bulk Add</button>
+<button onclick="undoLastAdd()" style="margin-top:4px;">
+  Undo last add
+</button>
+<div id="bulk-status" style="font-size:0.85rem;color:#555;"></div>
 
   <!-- TAB CONTENT: FLASHCARDS -->
   <div id="flash" class="tab-content">
