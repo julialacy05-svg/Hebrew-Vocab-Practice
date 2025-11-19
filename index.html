@@ -628,6 +628,18 @@
     <div class="db-card-stats" id="teacher-stats">Stats: no attempts yet</div>
   </div>
 
+  <!-- SEARCH BAR: TEACHER -->
+  <label style="font-size:0.85rem;color:#555;display:block;margin-bottom:4px;">
+    Search:
+    <input
+      id="teacher-search"
+      type="text"
+      placeholder="Search Hebrew / English..."
+      oninput="updateSearchTerm('teacher', this.value)"
+      style="margin-top:4px;padding:6px 8px;border-radius:10px;font-size:0.9rem;"
+    />
+  </label>
+  
 <!-- SORT DROPDOWN (includes favorites) -->
 <label style="font-size:0.85rem;color:#555;">Sort:
   <select onchange="sortDB('teacher', this.value)">
@@ -647,6 +659,18 @@
     <div class="db-card-stats" id="general-stats">Stats: no attempts yet</div>
   </div>
 
+  <!-- SEARCH BAR: GENERAL -->
+  <label style="font-size:0.85rem;color:#555;display:block;margin-bottom:4px;">
+    Search:
+    <input
+      id="general-search"
+      type="text"
+      placeholder="Search Hebrew / English..."
+      oninput="updateSearchTerm('general', this.value)"
+      style="margin-top:4px;padding:6px 8px;border-radius:10px;font-size:0.9rem;"
+    />
+  </label>
+  
 <!-- SORT DROPDOWN (includes favorites) -->
 <label style="font-size:0.85rem;color:#555;">Sort:
   <select onchange="sortDB('general', this.value)">
@@ -995,11 +1019,19 @@ let favOnly = {
   general: false
 };
 
-// Update favorites-only filter and re-render
-window.setFavFilter = function (dbName, isOn) {
-  favOnly[dbName] = !!isOn;
+// Search terms for Teacher / General
+let searchTerms = {
+  teacher: "",
+  general: ""
+};
+
+window.updateSearchTerm = function (dbName, value) {
+  searchTerms[dbName] = (value || "").toLowerCase();
   renderLists();
 };
+  
+// Update favorites-only filter and re-render
+
   
 // For undo (stores the state before the last add / bulk add)
 let lastAddSnapshot = null;
@@ -1134,23 +1166,41 @@ function renderLists() {
     }
   }
   
- // Build Teacher list (with optional favorites filter, preserving original indexes)
-const teacherRows = teacherDB
-  .map((w, i) => ({ w, i }))
-  .filter(({ w }) => !favOnly.teacher || w.favorite);
+   // Build Teacher list (favorites + search, preserving original indexes)
+  const teacherRows = teacherDB
+    .map((w, i) => ({ w, i }))
+    .filter(({ w }) => {
+      // favorites filter (if you ever re-enable it)
+      if (favOnly.teacher && !w.favorite) return false;
 
-teacherList.innerHTML = teacherRows.length
-  ? teacherRows.map(({ w, i }) => wordRow("teacher", i, w)).join("")
-  : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
+      // search filter
+      const term = searchTerms.teacher;
+      if (!term) return true;
 
-// Build General list (same idea)
-const generalRows = generalDB
-  .map((w, i) => ({ w, i }))
-  .filter(({ w }) => !favOnly.general || w.favorite);
+      const haystack = `${w.he} ${w.en} ${w.tr || ""}`.toLowerCase();
+      return haystack.includes(term);
+    });
 
-generalList.innerHTML = generalRows.length
-  ? generalRows.map(({ w, i }) => wordRow("general", i, w)).join("")
-  : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
+  teacherList.innerHTML = teacherRows.length
+    ? teacherRows.map(({ w, i }) => wordRow("teacher", i, w)).join("")
+    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+
+  // Build General list (favorites + search)
+  const generalRows = generalDB
+    .map((w, i) => ({ w, i }))
+    .filter(({ w }) => {
+      if (favOnly.general && !w.favorite) return false;
+
+      const term = searchTerms.general;
+      if (!term) return true;
+
+      const haystack = `${w.he} ${w.en} ${w.tr || ""}`.toLowerCase();
+      return haystack.includes(term);
+    });
+
+  generalList.innerHTML = generalRows.length
+    ? generalRows.map(({ w, i }) => wordRow("general", i, w)).join("")
+    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
   const all = [...teacherDB, ...generalDB];
   const t = computeStats(teacherDB);
   const g = computeStats(generalDB);
