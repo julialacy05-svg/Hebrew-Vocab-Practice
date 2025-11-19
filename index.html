@@ -1528,12 +1528,45 @@ function getAllWords() {
   return [...teacherDB, ...generalDB];
 }
 
-  function getMissedWords() {
+// ---------- PRACTICE SCOPE (All / Teacher / General / Favorites) ----------
+let practiceScopeSelect = document.getElementById("practice-scope");
+let practiceScope = practiceScopeSelect ? practiceScopeSelect.value : "all";
+
+window.setPracticeScope = function (scope) {
+  practiceScope = scope || "all";
+  // refresh main flashcard when pool changes so you see it immediately
+  newCard();
+};
+
+function getPracticeWords() {
+  let words;
+
+  if (practiceScope === "teacher") {
+    words = teacherDB;
+  } else if (practiceScope === "general") {
+    words = generalDB;
+  } else if (practiceScope === "favorites") {
+    words = getAllWords().filter(w => w.favorite);
+  } else {
+    // "all"
+    words = getAllWords();
+  }
+
+  // if Favorites has nothing yet, quietly fall back to all words
+  if (!words.length && practiceScope === "favorites") {
+    words = getAllWords();
+  }
+
+  return words;
+}
+
+// Missed words still come from the full database (not limited by scope)
+function getMissedWords() {
   return getAllWords().filter(w => (w.wrong || 0) > 0);
 }
   
 window.newCard = function () {
-  const all = getAllWords();
+  const all = getPracticeWords();
 
   const front = document.getElementById("flashcard-front");
   const back  = document.getElementById("flashcard-back");
@@ -1677,7 +1710,9 @@ arcadeTiles.forEach(tile=>{
    SENTENCE BUILDER (placeholder)
 ============================================================ */
 window.startSentenceBuilder = function () {
-  const all = getAllWords().filter(w => w.he.trim().split(/\s+/).length > 1);
+  const all = getPracticeWords().filter(
+  w => w.he.trim().split(/\s+/).length > 1
+);
   const targetEl = document.getElementById("builder-target");
   const wordsEl  = document.getElementById("builder-words");
 
@@ -1778,7 +1813,7 @@ function checkSentenceBuilderAnswer() {
    LISTENING MODE (placeholder)
 ============================================================ */
 window.startListeningMode = function () {
-  const all = getAllWords();
+  const all = getPracticeWords();
   const fbEl   = document.getElementById("listening-feedback");
   const inputEl = document.getElementById("listening-input");
   const hintEl  = document.getElementById("listening-hint");
@@ -1867,7 +1902,7 @@ window.submitListeningAnswer = function () {
 ============================================================ */
 window.generateRandomSentence = function () {
   const box = document.getElementById("generated-sentence");
-  const all = getAllWords();
+  const all = getPracticeWords();
 
   if (all.length < 3) {
     box.innerText = "Add at least 3 words to generate a sentence.";
@@ -1925,7 +1960,7 @@ function speakHebrew(text) {
 }
   
 window.startTypingMode = function () {
-  const all = getAllWords();
+  const all = getPracticeWords();
   const promptEl = document.getElementById("typing-prompt");
   const inputEl = document.getElementById("typing-input");
   const fbEl = document.getElementById("typing-feedback");
@@ -1997,7 +2032,7 @@ window.startArcadeMCQ = function () {
   const qEl = document.getElementById("arcade-mcq-question");
   const optEl = document.getElementById("arcade-mcq-options");
 
-  const all = getAllWords();
+  const all = getPracticeWords();
   if (all.length < 2) {
     qEl.innerText = "Add at least 2 words to play.";
     optEl.innerHTML = "";
@@ -2338,7 +2373,7 @@ let adaptiveCurrent = null;
 
 window.startAdaptive = function () {
   const out = document.getElementById("adaptive-output");
-  const all = getAllWords();
+const all = getPracticeWords();
 
   // "hard" words = at least 1 wrong, sorted by (wrong - correct) descending
   const hard = all
@@ -2406,7 +2441,7 @@ let convoPromptWord = null;
 
 window.startConversation = function () {
   const chat = document.getElementById("conversation-chat");
-  const all = getAllWords();
+  const all = getPracticeWords();
 
   if (!all.length) {
     chat.innerHTML = "Add some words first, then we can build sentences with them.";
