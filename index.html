@@ -1419,14 +1419,15 @@ window.addWord = function () {
   // === ADD NEW WORD (existing behavior) ===
   snapshotBeforeAdd();
 
-    const w = {
+     const w = {
     he,
     tr,
     en,
     correct: 0,
     wrong: 0,
     created: Date.now(),
-    seen: 0
+    seen: 0,
+    lastSeen: 0
   };
 
   if (dbChoice === "teacher") teacherDB.push(w);
@@ -1476,14 +1477,15 @@ window.bulkAdd = function () {
     }
 
     const w = {
-  he,
-  tr,
-  en,
-  correct: 0,
-  wrong: 0,
-  created: Date.now(),
-  seen: 0
-};
+      he,
+      tr,
+      en,
+      correct: 0,
+      wrong: 0,
+      created: Date.now(),
+      seen: 0,
+      lastSeen: 0
+    };
 
     if (dbChoice === "teacher") teacherDB.push(w);
     else generalDB.push(w);
@@ -1544,11 +1546,52 @@ function getAllWords() {
   return [...teacherDB, ...generalDB];
 }
 
-  function bumpSeen(word) {
+function bumpSeen(word) {
   if (!word) return;
   word.seen = (word.seen || 0) + 1;
+  word.lastSeen = Date.now();
 }
 
+// Simple SRS picker: prefers words that are wrong more often
+// and that haven't been seen recently.
+function srsPickWord(pool) {
+  if (!pool.length) return null;
+
+  const now = Date.now();
+
+  const weights = pool.map(w => {
+    const correct = w.correct || 0;
+    const wrong   = w.wrong   || 0;
+    const attempts = correct + wrong;
+
+    // How "hard" is this word?
+    let difficulty;
+    if (!attempts) {
+      difficulty = 2.5; // brand new word
+    } else {
+      const errorRate = wrong / attempts; // 0–1
+      difficulty = 1 + errorRate * 4;     // 1–5 scaling
+    }
+
+    // How long since last seen?
+    const last = w.lastSeen || 0;
+    const ageMinutes = (now - last) / 60000;
+    const recency = Math.min(4, 0.5 + ageMinutes / 10);
+    // recently seen → ~0.5 weight; long time ago → higher weight
+
+    return difficulty * recency;
+  });
+
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+}
+  
 // ---------- PRACTICE SCOPE (All / Teacher / General / Favorites) ----------
 let practiceScopeSelect = document.getElementById("practice-scope");
 let practiceScope = practiceScopeSelect ? practiceScopeSelect.value : "all";
@@ -1603,8 +1646,8 @@ window.newCard = function () {
     return;
   }
 
-  // Normal behavior once there *are* words
-  currentCard = all[Math.floor(Math.random() * all.length)];
+  // SRS: pick a word based on difficulty + time since seen
+  currentCard = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
   bumpSeen(currentCard);
   const mode = document.getElementById("flash-mode").value;
 
@@ -1653,9 +1696,9 @@ window.newMCQ = function () {
   const all = getAllWords();
   if (all.length < 2) return alert("Need at least 2 words.");
 
-  const correct = all[Math.floor(Math.random()*all.length)];
-bumpSeen(correct);
-const choices = [correct];
+  const correct = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(correct);
+  const choices = [correct];
 
   while (choices.length < 4 && choices.length < all.length) {
     const c = all[Math.floor(Math.random()*all.length)];
@@ -1732,7 +1775,11 @@ arcadeTiles.forEach(tile=>{
 /* ============================================================
    SENTENCE BUILDER (placeholder)
 ============================================================ */
-window.startSentenceBuilder = function () {
+let builderCurrent = null;
+let builderWords = [];
+let builderChosen = [];
+  
+  window.startSentenceBuilder = function () {
   const all = getPracticeWords().filter(
   w => w.he.trim().split(/\s+/).length > 1
 );
@@ -1745,9 +1792,9 @@ window.startSentenceBuilder = function () {
     return;
   }
 
-  // pick a random multi-word phrase
-  builderCurrent = all[Math.floor(Math.random() * all.length)];
-bumpSeen(builderCurrent);
+  // pick a multi-word phrase via SRS
+  builderCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(builderCurrent);
 builderWords   = builderCurrent.he.trim().split(/\s+/);
 builderChosen  = [];
 
@@ -1831,7 +1878,7 @@ function checkSentenceBuilderAnswer() {
   renderLists();
 
   // auto-start a new one after a pause
-  setTimeout(startSentenceBuilder, 1500);
+  setTimeout(window.startSentenceBuilder, 1500);
 }
 /* ============================================================
    LISTENING MODE (placeholder)
@@ -1848,8 +1895,8 @@ window.startListeningMode = function () {
     return;
   }
 
-  listeningCurrent = all[Math.floor(Math.random() * all.length)];
-bumpSeen(listeningCurrent);
+  listeningCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(listeningCurrent);
 
   // reset UI each round
   fbEl.innerHTML = "Listen and type the Hebrew you hear (vowels optional).";
@@ -1919,7 +1966,7 @@ window.submitListeningAnswer = function () {
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
 
-  setTimeout(startListeningMode, 1500);
+  setTimeout(window.startListeningMode, 1500);
 };
 
 /* ============================================================
@@ -2000,8 +2047,8 @@ window.startTypingMode = function () {
     return;
   }
 
-  typingCurrent = all[Math.floor(Math.random() * all.length)];
-bumpSeen(typingCurrent);
+  typingCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(typingCurrent);
 promptEl.innerHTML = `
   Translate into Hebrew (vowels optional):<br>
   <strong>${typingCurrent.en}</strong>
@@ -2044,20 +2091,15 @@ window.submitTypingAnswer = function () {
   renderLists(); // keep stats + Missed tab updated
 
   setTimeout(() => {
-    startTypingMode();
+    window.startTypingMode();
   }, 1000);
 };
-
+  
 /* ============================================================
    ARCADE MCQ (real game)
 ============================================================ */
 let arcadeMCQCurrent = null;
 let arcadeMCQChoices = [];
-
-// Sentence Builder state
-let builderCurrent = null;
-let builderWords = [];
-let builderChosen = [];
   
 window.startArcadeMCQ = function () {
   const qEl = document.getElementById("arcade-mcq-question");
@@ -2070,8 +2112,8 @@ window.startArcadeMCQ = function () {
     return;
   }
 
-  arcadeMCQCurrent = all[Math.floor(Math.random() * all.length)];
-bumpSeen(arcadeMCQCurrent);
+  arcadeMCQCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(arcadeMCQCurrent);
 
   const choices = [arcadeMCQCurrent];
   while (choices.length < 4 && choices.length < all.length) {
@@ -2113,7 +2155,7 @@ window.answerArcadeMCQ = function (index) {
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
 
-  setTimeout(startArcadeMCQ, 1000);
+  setTimeout(window.startArcadeMCQ, 1000);
 };
 
 /* ============================================================
@@ -2128,8 +2170,8 @@ window.newMissedCard = function () {
     return;
   }
 
-  missedCardCurrent = missed[Math.floor(Math.random() * missed.length)];
-bumpSeen(missedCardCurrent);
+  missedCardCurrent = srsPickWord(missed) || missed[Math.floor(Math.random() * missed.length)];
+  bumpSeen(missedCardCurrent);
 
   const front = document.getElementById("missed-flash-front");
   const back  = document.getElementById("missed-flash-back");
@@ -2175,8 +2217,8 @@ window.newMissedMCQ = function () {
     return;
   }
 
-missedMCQCurrent = missed[Math.floor(Math.random() * missed.length)];
-bumpSeen(missedMCQCurrent);
+  missedMCQCurrent = srsPickWord(missed) || missed[Math.floor(Math.random() * missed.length)];
+  bumpSeen(missedMCQCurrent);
   const choices = [missedMCQCurrent];
 
   while (choices.length < 4 && choices.length < missed.length) {
@@ -2222,7 +2264,7 @@ window.answerMissedMCQ = function (index) {
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
 
-  setTimeout(newMissedMCQ, 1000);
+  setTimeout(window.newMissedMCQ, 1000);
 };
 
 /* --- Missed-only typing --- */
@@ -2239,8 +2281,8 @@ window.startMissedTyping = function () {
     return;
   }
 
-  missedTypingCurrent = missed[Math.floor(Math.random() * missed.length)];
-bumpSeen(missedTypingCurrent);
+  missedTypingCurrent = srsPickWord(missed) || missed[Math.floor(Math.random() * missed.length)];
+  bumpSeen(missedTypingCurrent);
 promptEl.innerHTML = `
     Translate into Hebrew (no vowels needed):<br>
     <strong>${missedTypingCurrent.en}</strong>
@@ -2282,7 +2324,7 @@ window.submitMissedTypingAnswer = function () {
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
 
-  setTimeout(startMissedTyping, 1000);
+  setTimeout(window.startMissedTyping, 1000);
 };
   
 /* ============================================================
@@ -2470,7 +2512,7 @@ window.submitAdaptiveAnswer = function () {
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
 
-  setTimeout(startAdaptive, 1500);
+  setTimeout(window.startAdaptive, 1500);
 };
 
 let convoPromptWord = null;
@@ -2484,8 +2526,8 @@ window.startConversation = function () {
     return;
   }
 
-convoPromptWord = all[Math.floor(Math.random() * all.length)];
-bumpSeen(convoPromptWord);
+  convoPromptWord = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(convoPromptWord);
 chat.innerHTML = `
     <div class="chat-msg-ai">
       <span>
@@ -2529,12 +2571,12 @@ window.sendConversation = function () {
   }
 
   // new prompt
-const nextPrompt = all[Math.floor(Math.random() * all.length)];
-convoPromptWord = nextPrompt;
-bumpSeen(nextPrompt);
-saveLocalDB();
-if (currentUser) saveCloudDB(currentUser.uid);
-renderLists();
+    const nextPrompt = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  convoPromptWord = nextPrompt;
+  bumpSeen(nextPrompt);
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
 
   const aiSpan = document.createElement("span");
   aiSpan.innerHTML = `
