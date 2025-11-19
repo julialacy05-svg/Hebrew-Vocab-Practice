@@ -628,16 +628,16 @@
     <div class="db-card-stats" id="teacher-stats">Stats: no attempts yet</div>
   </div>
 
-  <!-- NEW SORT DROPDOWN -->
-  <label style="font-size:0.85rem;color:#555;">Sort:
-<select onchange="sortDB('teacher', this.value)"
-        onclick="sortDB('teacher', this.value)">
-  <option value="recent">Most Recent</option>
-  <option value="grade">Best Grade</option>
-  <option value="length">Length (short→long)</option>
-  <option value="length-desc">Length (long→short)</option>
-</select>
-  </label>
+<!-- SORT DROPDOWN (includes favorites) -->
+<label style="font-size:0.85rem;color:#555;">Sort:
+  <select onchange="sortDB('teacher', this.value)">
+    <option value="recent">Most Recent</option>
+    <option value="grade">Best Grade</option>
+    <option value="length">Length (short→long)</option>
+    <option value="length-desc">Length (long→short)</option>
+    <option value="fav-only">Favorites only (best grade)</option>
+  </select>
+</label>
   
 <!-- ⭐ FAVORITES FILTER (TEACHER) -->
   <label style="display:block;font-size:0.8rem;color:#555;margin:4px 0 6px;">
@@ -657,16 +657,16 @@
     <div class="db-card-stats" id="general-stats">Stats: no attempts yet</div>
   </div>
 
-  <!-- NEW SORT DROPDOWN -->
-  <label style="font-size:0.85rem;color:#555;">Sort:
-<select onchange="sortDB('general', this.value)"
-        onclick="sortDB('general', this.value)">
-  <option value="recent">Most Recent</option>
-  <option value="grade">Best Grade</option>
-  <option value="length">Length (short→long)</option>
-  <option value="length-desc">Length (long→short)</option>
-</select>
-  </label>
+<!-- SORT DROPDOWN (includes favorites) -->
+<label style="font-size:0.85rem;color:#555;">Sort:
+  <select onchange="sortDB('general', this.value)">
+    <option value="recent">Most Recent</option>
+    <option value="grade">Best Grade</option>
+    <option value="length">Length (short→long)</option>
+    <option value="length-desc">Length (long→short)</option>
+    <option value="fav-only">Favorites only (best grade)</option>
+  </select>
+</label>
 
  <!-- ⭐ FAVORITES FILTER (GENERAL) -->
   <label style="display:block;font-size:0.8rem;color:#555;margin:4px 0 6px;">
@@ -1200,28 +1200,37 @@ function wordRow(db, index, w) {
   const star = w.favorite ? "★" : "☆";
 
   return `
-    <div style="padding:10px;border-bottom:1px solid #eee;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div>
-          <strong>${w.he}</strong> — ${w.en}
-          ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
-        </div>
+    <div style="position:relative;padding:12px 12px 10px 12px;border-bottom:1px solid #eee;">
+      <!-- tiny favorite square in the top-right -->
+      <button
+        onclick="toggleFavorite('${db}', ${index})"
+        style="
+          position:absolute;
+          top:6px;
+          right:8px;
+          width:18px;
+          height:18px;
+          border-radius:4px;
+          border:1px solid ${w.favorite ? "#fbbf24" : "#dddddd"};
+          background:${w.favorite ? "#fff7cc" : "#ffffff"};
+          font-size:0.85rem;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          cursor:pointer;
+          padding:0;
+          line-height:1;
+          color:${w.favorite ? "#f59e0b" : "#bbbbbb"};
+        "
+        title="Toggle favorite"
+      >
+        ${star}
+      </button>
 
-        <button
-          onclick="toggleFavorite('${db}', ${index})"
-          style="
-            border:none;
-            background:none;
-            font-size:1.2rem;
-            cursor:pointer;
-            line-height:1;
-            padding:2px 4px;
-            color:${w.favorite ? "#f59e0b" : "#999"};
-          "
-          title="Toggle favorite"
-        >
-          ${star}
-        </button>
+      <!-- word content, with a little right padding so it doesn't hit the star -->
+      <div style="padding-right:26px;">
+        <strong>${w.he}</strong> — ${w.en}
+        ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
       </div>
 
       <button
@@ -1347,16 +1356,24 @@ window.bulkAdd = function () {
 // ============================================================
 window.sortDB = function (dbName, mode) {
   let db = (dbName === "teacher") ? teacherDB : generalDB;
+  const score = w => (w.correct || 0) - (w.wrong || 0);
 
   if (mode === "recent") {
+    favOnly[dbName] = false;
     db.sort((a, b) => (b.created || 0) - (a.created || 0));
   } else if (mode === "grade") {
-    const score = w => (w.correct || 0) - (w.wrong || 0);
+    favOnly[dbName] = false;
     db.sort((a, b) => score(b) - score(a));
   } else if (mode === "length") {
+    favOnly[dbName] = false;
     db.sort((a, b) => (a.he || "").length - (b.he || "").length);
   } else if (mode === "length-desc") {
+    favOnly[dbName] = false;
     db.sort((a, b) => (b.he || "").length - (a.he || "").length);
+  } else if (mode === "fav-only") {
+    // Favorites-only view (sorted by best grade)
+    favOnly[dbName] = true;
+    db.sort((a, b) => score(b) - score(a));
   }
 
   if (dbName === "teacher") teacherDB = [...db];
@@ -1366,7 +1383,6 @@ window.sortDB = function (dbName, mode) {
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
 };
-  
 /* ============================================================
    FLASHCARDS
 ============================================================ */
