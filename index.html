@@ -152,6 +152,11 @@
   background: #ffffff;
 }
 
+/* Hide logout by default; we show it via JS after login */
+#auth-logout {
+  display: none;
+}
+    
 /* On small screens, stack auth below title */
 @media (max-width: 700px) {
   .app-header {
@@ -2780,17 +2785,51 @@ document.getElementById("auth-logout").onclick = async()=>{
 onAuthStateChanged(auth, async (user)=>{
   currentUser = user;
 
-  if (user) {
-    document.getElementById("auth-status-text").innerText =
-      "Signed in as " + user.email;
+  const statusEl   = document.getElementById("auth-status-text");
+  const emailInput = document.getElementById("auth-email");
+  const passInput  = document.getElementById("auth-password");
+  const loginBtn   = document.getElementById("auth-login");
+  const signupBtn  = document.getElementById("auth-signup");
+  const logoutBtn  = document.getElementById("auth-logout");
 
+  if (user) {
+    // --- LOGGED IN STATE ---
+    statusEl.innerText = "Signed in as " + user.email;
+
+    // Hide login + signup stuff
+    if (emailInput) emailInput.style.display = "none";
+    if (passInput)  passInput.style.display  = "none";
+    if (loginBtn)   loginBtn.style.display   = "none";
+    if (signupBtn)  signupBtn.style.display  = "none";
+
+    // Show logout button
+    if (logoutBtn)  logoutBtn.style.display  = "inline-block";
+
+    // Load/sync this user's data
     await syncOnLogin(user.uid);
+
   } else {
-    document.getElementById("auth-status-text").innerText =
-      "Not signed in (local only)";
-    loadLocalDB();
+    // --- LOGGED OUT STATE ---
+    statusEl.innerText = "Not signed in";
+
+    // Show login + signup stuff again
+    if (emailInput) emailInput.style.display = "inline-block";
+    if (passInput)  passInput.style.display  = "inline-block";
+    if (loginBtn)   loginBtn.style.display   = "inline-block";
+    if (signupBtn)  signupBtn.style.display  = "inline-block";
+
+    // Hide logout button
+    if (logoutBtn)  logoutBtn.style.display  = "none";
+
+    // 🔒 Clear in-memory DBs so no words show when logged out
+    teacherDB = [];
+    generalDB = [];
+
+    // (Optional but recommended) also clear from localStorage on this device
+    saveLocalDB();
   }
 
+  // Re-render UI based on current (possibly empty) DBs
   renderLists();
   newCard();
 });
@@ -2798,7 +2837,8 @@ onAuthStateChanged(auth, async (user)=>{
 /* ============================================================
    INITIAL LOAD
 ============================================================ */
-loadLocalDB();
+// Start with empty DBs; we'll populate them after we know auth state.
+// onAuthStateChanged will call renderLists() + newCard().
 renderLists();
 newCard();
 
