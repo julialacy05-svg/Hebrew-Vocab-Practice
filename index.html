@@ -529,25 +529,40 @@
   <!-- TABS -->
   <div class="tab-bar">
     <span class="tab active" data-tab="manage">Manage Words</span>
-    <span class="tab" data-tab="missed">Missed Words</span>
+    <span class="tab" data-tab="missed">Practice Hub</span>
     <span class="tab" data-tab="flash">Flashcards</span>
     <span class="tab" data-tab="ai">AI Tutor (Gemini)</span>
     <span class="tab" data-tab="arcade">Practice Arcade 🎯</span>
   </div>
 
-  <!-- TAB CONTENT: MISSED WORDS -->
-  <div id="missed" class="tab-content">
-    <h2>Missed Words Trainer</h2>
+<!-- TAB CONTENT: PRACTICE HUB -->
+<div id="missed" class="tab-content">
+  <h2>Practice Hub</h2>
 
-    <p style="color:#555;margin-bottom:0.75rem;">
-      These are words you've gotten wrong at least once. Use this tab to attack your weak spots.
-    </p>
+  <p style="color:#555;margin-bottom:0.75rem;">
+    Practice words by confidence level (Fail, Bad, OK, Good, Easy).
+  </p>
 
-    <!-- Missed words list -->
-    <div class="db-row" style="margin-top:0.8rem;">
+  <label style="font-size:0.85rem;color:#555;display:block;margin-bottom:0.4rem;">
+    Practice group:
+    <select id="practice-hub-filter"
+            onchange="setPracticeHubFilter(this.value)"
+            style="margin-top:4px;padding:6px 8px;border-radius:10px;font-size:0.9rem;">
+      <option value="fail-bad" selected>Low confidence (Fail + Bad)</option>
+      <option value="fail">Fail only</option>
+      <option value="bad">Bad only</option>
+      <option value="ok">OK</option>
+      <option value="good">Good</option>
+      <option value="easy">Easy</option>
+      <option value="all">All rated words</option>
+    </select>
+  </label>
+
+  <!-- Practice hub word list -->
+  <div class="db-row" style="margin-top:0.8rem;">
       <div class="db-card">
         <div class="db-card-header">
-          <div class="db-card-title">Missed Words</div>
+          <div class="db-card-title">Practice Hub Words</div>
           <div class="db-card-stats" id="missed-stats">Stats: no attempts yet</div>
         </div>
         <div id="missed-list" class="word-list"></div>
@@ -739,11 +754,27 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-      <button onclick="flipCard()" style="flex:1 1 120px;">Flip</button>
-      <button onclick="markRight()" style="flex:1 1 120px;background:#3bc67d;">I got it right</button>
-      <button onclick="markWrong()" style="flex:1 1 120px;background:#ff6f6f;">I got it wrong</button>
-    </div>
+<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+  <button onclick="flipCard()" style="flex:1 1 120px;">Flip</button>
+</div>
+
+<div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+  <button onclick="rateFail()" style="flex:1 1 80px;background:#ff6f6f;">
+    Fail
+  </button>
+  <button onclick="rateBad()" style="flex:1 1 80px;background:#ff9f40;">
+    Bad
+  </button>
+  <button onclick="rateOk()" style="flex:1 1 80px;background:#ffd95e;color:#7a5a00;">
+    OK
+  </button>
+  <button onclick="rateGood()" style="flex:1 1 80px;background:#3bc67d;">
+    Good
+  </button>
+  <button onclick="rateEasy()" style="flex:1 1 80px;background:#4fa3ff;">
+    Easy
+  </button>
+</div>
 
     <h3 style="margin-top:1.6rem;">Multiple Choice</h3>
     <button onclick="newMCQ()">New Question</button>
@@ -1038,8 +1069,17 @@ let searchTerms = {
   general: ""
 };
 
+// Practice Hub filter (which confidence bucket to show)
+let practiceHubFilter = "fail-bad"; // default: Fail + Bad
+  
 window.updateSearchTerm = function (dbName, value) {
   searchTerms[dbName] = (value || "").toLowerCase();
+  renderLists();
+};
+
+  window.setPracticeHubFilter = function (value) {
+  practiceHubFilter = value || "fail-bad";
+  // Re-render so the Practice Hub list + stats update
   renderLists();
 };
   
@@ -1598,32 +1638,81 @@ function bumpSeen(word) {
   word.lastSeen = Date.now();
 }
 
-// Simple SRS picker: prefers words that are wrong more often
-// and that haven't been seen recently.
+// Map confidence number → label (for debugging / future UI)
+function confidenceLabel(c) {
+  switch (c) {
+    case 0: return "Fail";
+    case 1: return "Bad";
+    case 2: return "OK";
+    case 3: return "Good";
+    case 4: return "Easy";
+    default: return "Unrated";
+  }
+}
+
+/**
+ * Update a word's confidence based on a user rating.
+ * level: 0=Fail, 1=Bad, 2=OK, 3=Good, 4=Easy
+ *
+ * Slow promotion rule:
+ * - If level > current → move up by only 1 step.
+ *   (e.g., current=Fail(0), user clicks Easy(4) → new=Bad(1))
+ * - If level < current → jump down to level (you can drop confidence quickly).
+ * - If no previous confidence → set directly to level.
+ *
+ * Also updates correct/wrong counts to keep old stats useful:
+ * - Fail/Bad → wrong++
+ * - OK       → correct++ and wrong++
+ * - Good/Easy→ correct++
+ */
+function updateConfidence(word, level) {
+  if (!word) return;
+
+  let current =
+    typeof word.confidence === "number" ? word.confidence : null;
+
+  if (current === null) {
+    // first time rating this word
+    word.confidence = level;
+  } else if (level > current) {
+    word.confidence = current + 1; // slow promotion (one step)
+  } else if (level < current) {
+    word.confidence = level;       // fast demotion
+  } else {
+    // same level as before → no change
+    word.confidence = current;
+  }
+
+  // Update correct/wrong stats (so existing graphs still make sense)
+  if (level <= 1) {
+    // Fail or Bad
+    word.wrong = (word.wrong || 0) + 1;
+  } else if (level >= 3) {
+    // Good or Easy
+    word.correct = (word.correct || 0) + 1;
+  } else {
+    // OK
+    word.correct = (word.correct || 0) + 1;
+    word.wrong   = (word.wrong   || 0) + 1;
+  }
+}
+
+// Simple SRS picker: prefers low-confidence words and those
+// that haven't been seen recently.
 function srsPickWord(pool) {
   if (!pool.length) return null;
 
   const now = Date.now();
 
   const weights = pool.map(w => {
-    const correct = w.correct || 0;
-    const wrong   = w.wrong   || 0;
-    const attempts = correct + wrong;
+    const c = (typeof w.confidence === "number") ? w.confidence : 2; // default OK
+    // Lower confidence → higher difficulty
+    const difficulty = 5 - c; // Fail(0)→5 .. Easy(4)→1
 
-    // How "hard" is this word?
-    let difficulty;
-    if (!attempts) {
-      difficulty = 2.5; // brand new word
-    } else {
-      const errorRate = wrong / attempts; // 0–1
-      difficulty = 1 + errorRate * 4;     // 1–5 scaling
-    }
-
-    // How long since last seen?
     const last = w.lastSeen || 0;
     const ageMinutes = (now - last) / 60000;
+    // recently seen → ~0.5; long time ago → up to ~4
     const recency = Math.min(4, 0.5 + ageMinutes / 10);
-    // recently seen → ~0.5 weight; long time ago → higher weight
 
     return difficulty * recency;
   });
@@ -1637,6 +1726,8 @@ function srsPickWord(pool) {
   }
   return pool[pool.length - 1];
 }
+
+  
   
 // ---------- PRACTICE SCOPE (All / Teacher / General / Favorites) ----------
 let practiceScopeSelect = document.getElementById("practice-scope");
@@ -1672,7 +1763,29 @@ function getPracticeWords() {
 
 // Missed words still come from the full database (not limited by scope)
 function getMissedWords() {
-  return getAllWords().filter(w => (w.wrong || 0) > 0);
+  const all = getAllWords();
+  return all.filter(w => {
+    const c = (typeof w.confidence === "number") ? w.confidence : null;
+
+    switch (practiceHubFilter) {
+      case "fail":
+        return c === 0;
+      case "bad":
+        return c === 1;
+      case "ok":
+        return c === 2;
+      case "good":
+        return c === 3;
+      case "easy":
+        return c === 4;
+      case "fail-bad":
+        return c === 0 || c === 1;
+      case "all":
+        return c !== null;
+      default:
+        return c !== null;
+    }
+  });
 }
   
 window.newCard = function () {
@@ -1709,31 +1822,40 @@ window.flipCard = function () {
   document.getElementById("flashcard").classList.toggle("flipped");
 };
 
-window.markRight = function () {
+function handleFlashcardRating(level) {
+  // level: 0=Fail, 1=Bad, 2=OK, 3=Good, 4=Easy
   if (!currentCard) return;
 
-  currentCard.correct++;
+  updateConfidence(currentCard, level);
+
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
 
-  newCard();
-};
-
-window.markWrong = function () {
-  if (!currentCard) return;
-
-  // mark this word as wrong
-  currentCard.wrong++;
-
-  // save + sync
-  saveLocalDB();
-  if (currentUser) saveCloudDB(currentUser.uid);
-
-  // update stats + Missed tab list
+  // Update stats + Practice Hub lists
   renderLists();
 
-  // move to the next flashcard
+  // Move on to the next card
   newCard();
+}
+
+window.rateFail = function () {
+  handleFlashcardRating(0);
+};
+
+window.rateBad = function () {
+  handleFlashcardRating(1);
+};
+
+window.rateOk = function () {
+  handleFlashcardRating(2);
+};
+
+window.rateGood = function () {
+  handleFlashcardRating(3);
+};
+
+window.rateEasy = function () {
+  handleFlashcardRating(4);
 };
 /* ============================================================
    MULTIPLE CHOICE (Flashcards tab)
