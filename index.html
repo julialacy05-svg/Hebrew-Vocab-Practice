@@ -1457,9 +1457,22 @@ window.bulkAdd = function () {
 
   // take snapshot BEFORE we start adding multiple words
   snapshotBeforeAdd();
-  
+
   let added = 0;
-  let skipped = [];
+  let skippedInvalid = [];      // lines that don't have enough parts
+  let skippedDuplicates = [];   // Hebrew words that were already added
+
+  // 1) Build a set of existing Hebrew words (trimmed) from BOTH DBs
+  //    This represents words you already have saved.
+  const existingHebrew = new Set(
+    [...teacherDB, ...generalDB]
+      .map(w => (w.he || "").trim())
+      .filter(Boolean)
+  );
+
+  // 2) Track Hebrew seen in THIS bulk paste too
+  //    So if the same Hebrew appears twice in the paste, only the first is added.
+  const batchHebrew = new Set();
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i].trim();
@@ -1467,7 +1480,8 @@ window.bulkAdd = function () {
 
     const parts = raw.split(/[,;\t]/).map(p => p.trim()).filter(Boolean);
     if (parts.length < 2) {
-      skipped.push(i+1);
+      // not enough info on this line to make a word
+      skippedInvalid.push(i + 1);
       continue;
     }
 
@@ -1481,8 +1495,27 @@ window.bulkAdd = function () {
       en = parts.slice(2).join(", ");
     }
 
+    const heKey = (he || "").trim();
+    if (!heKey) {
+      skippedInvalid.push(i + 1);
+      continue;
+    }
+
+    // 3) DUPLICATE CHECK — Hebrew only
+    //    If this Hebrew already exists in DB OR appeared earlier in this paste,
+    //    skip adding the whole entry.
+    if (existingHebrew.has(heKey) || batchHebrew.has(heKey)) {
+      skippedDuplicates.push(heKey);
+      continue;
+    }
+
+    // mark as seen so later lines in this batch detect it as a duplicate
+    batchHebrew.add(heKey);
+    // also add to existingHebrew so additional lines see it as "already in DB"
+    existingHebrew.add(heKey);
+
     const w = {
-      he,
+      he: heKey,
       tr,
       en,
       correct: 0,
@@ -1503,13 +1536,21 @@ window.bulkAdd = function () {
 
   renderLists();
 
-  document.getElementById("bulk-status").innerHTML =
-    `Added ${added} words.${skipped.length ? " Skipped lines: " + skipped.join(", ") : ""}`;
+  // Build a nice status message
+  let status = `Added ${added} words.`;
+  if (skippedInvalid.length) {
+    status += ` Skipped invalid lines: ${skippedInvalid.join(", ")}.`;
+  }
+  if (skippedDuplicates.length) {
+    const uniqueHeb = [...new Set(skippedDuplicates)];
+    status += ` Already added (Hebrew duplicates): ${uniqueHeb.join(", ")}.`;
+  }
 
-  // NEW LINE – clears the textarea
+  document.getElementById("bulk-status").innerHTML = status;
+
+  // Clear textarea after import
   document.getElementById("bulk-input").value = "";
 };  // <--- CLOSES bulkAdd
-
 // ============================================================
 //   SORTING (Teacher / General)
 // ============================================================
