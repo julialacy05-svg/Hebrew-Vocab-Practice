@@ -615,10 +615,16 @@
   </select>
 </label>
 
-<button onclick="addWord()">Add Word</button>
+<button id="add-word-btn" onclick="addWord()">Add Word</button>
 <button onclick="undoLastAdd()" style="margin-left:0; margin-top:4px;">
   Undo last add
 </button>
+<button id="cancel-edit-btn" onclick="cancelEdit()" 
+        style="margin-left:0; margin-top:4px; display:none; background:#999; color:white;">
+  Cancel Edit
+</button>
+
+<div id="edit-status" style="margin-top:4px; font-size:0.85rem; color:#555;"></div>
 
 <div class="db-row" style="margin-top:1.5rem;">
 
@@ -1013,6 +1019,8 @@ let teacherDB = [];
 let generalDB = [];
 let currentUser = null;
 
+let editingState = null; // { dbName: "teacher" | "general", index: number }
+  
 // Favorites filter state
 let favOnly = {
   teacher: false,
@@ -1263,19 +1271,33 @@ function wordRow(db, index, w) {
         ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
       </div>
 
-      <button
-        onclick="deleteWord('${db}', ${index})"
-        style="
-          margin-top:6px;
-          background:#ff6f6f;
-          color:white;
-          border:none;
-          padding:6px 12px;
-          border-radius:6px;
-        "
-      >
-        Delete
-      </button>
+      <div style="margin-top:6px; display:flex; gap:6px;">
+        <button
+          onclick="startEditWord('${db}', ${index})"
+          style="
+            background:#4fa3ff;
+            color:white;
+            border:none;
+            padding:6px 12px;
+            border-radius:6px;
+          "
+        >
+          Edit
+        </button>
+
+        <button
+          onclick="deleteWord('${db}', ${index})"
+          style="
+            background:#ff6f6f;
+            color:white;
+            border:none;
+            padding:6px 12px;
+            border-radius:6px;
+          "
+        >
+          Delete
+        </button>
+      </div>
     </div>
   `;
 }
@@ -1289,6 +1311,48 @@ window.deleteWord = function (db, i) {
   renderLists();
 };
 
+window.startEditWord = function (dbName, index) {
+  const arr = dbName === "teacher" ? teacherDB : generalDB;
+  const w = arr[index];
+  if (!w) return;
+
+  // Fill the form inputs with existing values
+  document.getElementById("hebrew").value   = w.he || "";
+  document.getElementById("translit").value = w.tr || "";
+  document.getElementById("english").value  = w.en || "";
+  document.getElementById("db-select").value = dbName;
+
+  // Remember what we're editing
+  editingState = { dbName, index };
+
+  // Switch UI into "edit" mode
+  const addBtn    = document.getElementById("add-word-btn");
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  const status    = document.getElementById("edit-status");
+
+  if (addBtn) addBtn.textContent = "Save Changes";
+  if (cancelBtn) cancelBtn.style.display = "inline-block";
+  if (status) status.textContent = `Editing existing word in ${dbName} database...`;
+};
+
+window.cancelEdit = function () {
+  editingState = null;
+
+  // Clear inputs
+  document.getElementById("hebrew").value   = "";
+  document.getElementById("translit").value = "";
+  document.getElementById("english").value  = "";
+
+  // Reset UI text
+  const addBtn    = document.getElementById("add-word-btn");
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  const status    = document.getElementById("edit-status");
+
+  if (addBtn) addBtn.textContent = "Add Word";
+  if (cancelBtn) cancelBtn.style.display = "none";
+  if (status) status.textContent = "";
+};
+  
 window.toggleFavorite = function (dbName, index) {
   const arr = dbName === "teacher" ? teacherDB : generalDB;
   const w = arr[index];
@@ -1309,10 +1373,53 @@ window.addWord = function () {
 
   if (!he || !en) return alert("Hebrew + English required.");
 
-  // take snapshot BEFORE changing the DB
+  const addBtn    = document.getElementById("add-word-btn");
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  const status    = document.getElementById("edit-status");
+
+  // === EDIT EXISTING WORD ===
+  if (editingState) {
+    const sourceArr = editingState.dbName === "teacher" ? teacherDB : generalDB;
+    let word = sourceArr[editingState.index];
+    if (!word) {
+      // nothing to edit; just reset
+      editingState = null;
+    } else {
+      // update core fields
+      word.he = he;
+      word.tr = tr;
+      word.en = en;
+
+      // if user changed which DB it belongs to, move it
+      if (dbChoice !== editingState.dbName) {
+        sourceArr.splice(editingState.index, 1);
+        const targetArr = dbChoice === "teacher" ? teacherDB : generalDB;
+        targetArr.push(word);
+      }
+    }
+
+    // exit edit mode
+    editingState = null;
+    if (addBtn) addBtn.textContent = "Add Word";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (status) status.textContent = "";
+
+    saveLocalDB();
+    if (currentUser) saveCloudDB(currentUser.uid);
+    renderLists();
+
+    // clear inputs
+    document.getElementById("hebrew").value   = "";
+    document.getElementById("translit").value = "";
+    document.getElementById("english").value  = "";
+
+    return; // important: don't fall through to "add new"
+  }
+
+  // === ADD NEW WORD (existing behavior) ===
   snapshotBeforeAdd();
-  
- const w = { he, tr, en, correct:0, wrong:0, created: Date.now() };
+
+  const w = { he, tr, en, correct: 0, wrong: 0, created: Date.now() };
 
   if (dbChoice === "teacher") teacherDB.push(w);
   else generalDB.push(w);
@@ -1322,11 +1429,10 @@ window.addWord = function () {
 
   renderLists();
 
-  document.getElementById("hebrew").value = "";
+  document.getElementById("hebrew").value   = "";
   document.getElementById("translit").value = "";
-  document.getElementById("english").value = "";
+  document.getElementById("english").value  = "";
 };
-
 /* ============================================================
    BULK ADD WORDS
 ============================================================ */
