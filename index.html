@@ -1162,9 +1162,9 @@ function renderLists() {
         <div style="padding:10px;border-bottom:1px solid #eee;">
           <strong>${w.he}</strong> — ${w.en}
           ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
-          <div style="font-size:0.8rem;color:#999;margin-top:4px;">
-            Correct: ${w.correct || 0} · Wrong: ${w.wrong || 0}
-          </div>
+<div style="font-size:0.8rem;color:#999;margin-top:4px;">
+  Correct: ${w.correct || 0} · Wrong: ${w.wrong || 0} · Seen: ${w.seen || 0}
+</div>
         </div>
       `).join("");
 
@@ -1419,7 +1419,15 @@ window.addWord = function () {
   // === ADD NEW WORD (existing behavior) ===
   snapshotBeforeAdd();
 
-  const w = { he, tr, en, correct: 0, wrong: 0, created: Date.now() };
+    const w = {
+    he,
+    tr,
+    en,
+    correct: 0,
+    wrong: 0,
+    created: Date.now(),
+    seen: 0
+  };
 
   if (dbChoice === "teacher") teacherDB.push(w);
   else generalDB.push(w);
@@ -1467,7 +1475,15 @@ window.bulkAdd = function () {
       en = parts.slice(2).join(", ");
     }
 
-    const w = { he, tr, en, correct:0, wrong:0, created: Date.now() };
+    const w = {
+  he,
+  tr,
+  en,
+  correct: 0,
+  wrong: 0,
+  created: Date.now(),
+  seen: 0
+};
 
     if (dbChoice === "teacher") teacherDB.push(w);
     else generalDB.push(w);
@@ -1528,6 +1544,11 @@ function getAllWords() {
   return [...teacherDB, ...generalDB];
 }
 
+  function bumpSeen(word) {
+  if (!word) return;
+  word.seen = (word.seen || 0) + 1;
+}
+
 // ---------- PRACTICE SCOPE (All / Teacher / General / Favorites) ----------
 let practiceScopeSelect = document.getElementById("practice-scope");
 let practiceScope = practiceScopeSelect ? practiceScopeSelect.value : "all";
@@ -1584,6 +1605,7 @@ window.newCard = function () {
 
   // Normal behavior once there *are* words
   currentCard = all[Math.floor(Math.random() * all.length)];
+  bumpSeen(currentCard);
   const mode = document.getElementById("flash-mode").value;
 
   front.innerText = (mode === "he-to-en") ? currentCard.he : currentCard.en;
@@ -1632,7 +1654,8 @@ window.newMCQ = function () {
   if (all.length < 2) return alert("Need at least 2 words.");
 
   const correct = all[Math.floor(Math.random()*all.length)];
-  const choices = [correct];
+bumpSeen(correct);
+const choices = [correct];
 
   while (choices.length < 4 && choices.length < all.length) {
     const c = all[Math.floor(Math.random()*all.length)];
@@ -1724,8 +1747,9 @@ window.startSentenceBuilder = function () {
 
   // pick a random multi-word phrase
   builderCurrent = all[Math.floor(Math.random() * all.length)];
-  builderWords   = builderCurrent.he.trim().split(/\s+/);
-  builderChosen  = [];
+bumpSeen(builderCurrent);
+builderWords   = builderCurrent.he.trim().split(/\s+/);
+builderChosen  = [];
 
   // build target area + feedback container
   targetEl.innerHTML = `
@@ -1825,6 +1849,7 @@ window.startListeningMode = function () {
   }
 
   listeningCurrent = all[Math.floor(Math.random() * all.length)];
+bumpSeen(listeningCurrent);
 
   // reset UI each round
   fbEl.innerHTML = "Listen and type the Hebrew you hear (vowels optional).";
@@ -1922,6 +1947,11 @@ window.generateRandomSentence = function () {
     }
   }
 
+  chosen.forEach(bumpSeen);
+saveLocalDB();
+if (currentUser) saveCloudDB(currentUser.uid);
+renderLists();
+  
   const hebrew = chosen.map(w => w.he).join(" ");
   const english = chosen.map(w => w.en).join(" · ");
 
@@ -1971,10 +2001,11 @@ window.startTypingMode = function () {
   }
 
   typingCurrent = all[Math.floor(Math.random() * all.length)];
-  promptEl.innerHTML = `
-    Translate into Hebrew (vowels optional):<br>
-    <strong>${typingCurrent.en}</strong>
-  `;
+bumpSeen(typingCurrent);
+promptEl.innerHTML = `
+  Translate into Hebrew (vowels optional):<br>
+  <strong>${typingCurrent.en}</strong>
+`;
   inputEl.value = "";
   fbEl.innerText = "";
   inputEl.focus();
@@ -2040,6 +2071,7 @@ window.startArcadeMCQ = function () {
   }
 
   arcadeMCQCurrent = all[Math.floor(Math.random() * all.length)];
+bumpSeen(arcadeMCQCurrent);
 
   const choices = [arcadeMCQCurrent];
   while (choices.length < 4 && choices.length < all.length) {
@@ -2097,6 +2129,7 @@ window.newMissedCard = function () {
   }
 
   missedCardCurrent = missed[Math.floor(Math.random() * missed.length)];
+bumpSeen(missedCardCurrent);
 
   const front = document.getElementById("missed-flash-front");
   const back  = document.getElementById("missed-flash-back");
@@ -2142,7 +2175,8 @@ window.newMissedMCQ = function () {
     return;
   }
 
-  missedMCQCurrent = missed[Math.floor(Math.random() * missed.length)];
+missedMCQCurrent = missed[Math.floor(Math.random() * missed.length)];
+bumpSeen(missedMCQCurrent);
   const choices = [missedMCQCurrent];
 
   while (choices.length < 4 && choices.length < missed.length) {
@@ -2206,7 +2240,8 @@ window.startMissedTyping = function () {
   }
 
   missedTypingCurrent = missed[Math.floor(Math.random() * missed.length)];
-  promptEl.innerHTML = `
+bumpSeen(missedTypingCurrent);
+promptEl.innerHTML = `
     Translate into Hebrew (no vowels needed):<br>
     <strong>${missedTypingCurrent.en}</strong>
   `;
@@ -2373,7 +2408,7 @@ let adaptiveCurrent = null;
 
 window.startAdaptive = function () {
   const out = document.getElementById("adaptive-output");
-const all = getPracticeWords();
+  const all = getPracticeWords();
 
   // "hard" words = at least 1 wrong, sorted by (wrong - correct) descending
   const hard = all
@@ -2387,6 +2422,7 @@ const all = getPracticeWords();
   }
 
   adaptiveCurrent = hard[0]; // hardest word
+  bumpSeen(adaptiveCurrent);
 
   out.innerHTML = `
     <div>
@@ -2448,8 +2484,9 @@ window.startConversation = function () {
     return;
   }
 
-  convoPromptWord = all[Math.floor(Math.random() * all.length)];
-  chat.innerHTML = `
+convoPromptWord = all[Math.floor(Math.random() * all.length)];
+bumpSeen(convoPromptWord);
+chat.innerHTML = `
     <div class="chat-msg-ai">
       <span>
         Write a short sentence in Hebrew using this word: <strong>${convoPromptWord.he}</strong>
@@ -2492,8 +2529,12 @@ window.sendConversation = function () {
   }
 
   // new prompt
-  const nextPrompt = all[Math.floor(Math.random() * all.length)];
-  convoPromptWord = nextPrompt;
+const nextPrompt = all[Math.floor(Math.random() * all.length)];
+convoPromptWord = nextPrompt;
+bumpSeen(nextPrompt);
+saveLocalDB();
+if (currentUser) saveCloudDB(currentUser.uid);
+renderLists();
 
   const aiSpan = document.createElement("span");
   aiSpan.innerHTML = `
