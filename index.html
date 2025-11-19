@@ -570,7 +570,7 @@
     </div>
 
     <!-- Missed-only flashcards -->
-    <h3 style="margin-top:1.8rem;">Flashcards (Missed Only)</h3>
+    <h3 style="margin-top:1.8rem;">Flashcards (Current Practice Group)</h3>
     <button onclick="newMissedCard()">New Card</button>
 
     <div id="missed-flashcard" class="flashcard" style="margin-top:1rem;">
@@ -591,14 +591,14 @@
     </div>
 
     <!-- Missed-only MCQ -->
-    <h3 style="margin-top:1.8rem;">Multiple Choice (Missed Only)</h3>
+    <h3 style="margin-top:1.8rem;">Multiple Choice (Current Practice Group)</h3>
     <button onclick="newMissedMCQ()">New Question</button>
 
     <div id="missed-mcq-question" style="margin-top:1.3rem; font-size:1.1rem;"></div>
     <div id="missed-mcq-options" style="margin-top:1rem;"></div>
 
     <!-- Missed-only typing -->
-    <h3 style="margin-top:1.8rem;">Typing Practice (Missed Only)</h3>
+    <h3 style="margin-top:1.8rem;">Typing Practice (Current Practice Group)</h3>
     <button onclick="startMissedTyping()">Begin Typing Practice</button>
 
     <div id="missed-typing-prompt" style="margin-top:1.3rem; font-size:1.2rem;"></div>
@@ -1192,38 +1192,39 @@ function renderLists() {
   const generalStatsEl = document.getElementById("general-stats");
   const overallStatsEl = document.getElementById("overall-stats");
 
-  // Update Missed Words tab if it exists
+  // ===== Update Practice Hub (Missed tab) =====
   const missedListEl  = document.getElementById("missed-list");
   const missedStatsEl = document.getElementById("missed-stats");
-  if (missedListEl && missedStatsEl) {
-    const missed = getMissedWords();
 
-    if (!missed.length) {
+  if (missedListEl && missedStatsEl) {
+    const groupWords = getPracticeHubWords();
+
+    if (!groupWords.length) {
       missedListEl.innerHTML =
         "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No missed words yet. Get some wrong in practice first 😈</p>";
       missedStatsEl.textContent = "Stats: no attempts yet";
     } else {
-      missedListEl.innerHTML = missed.map(w => `
+      missedListEl.innerHTML = groupWords.map(w => `
         <div style="padding:10px;border-bottom:1px solid #eee;">
           <strong>${w.he}</strong> — ${w.en}
           ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
-<div style="font-size:0.8rem;color:#999;margin-top:4px;">
-  Correct: ${w.correct || 0} · Wrong: ${w.wrong || 0} · Seen: ${w.seen || 0}
-</div>
+          <div style="font-size:0.8rem;color:#999;margin-top:4px;">
+            Correct: ${w.correct || 0} · Wrong: ${w.wrong || 0} · Seen: ${w.seen || 0}
+          </div>
         </div>
       `).join("");
 
-      const s = computeStats(missed);
+      const s = computeStats(groupWords);
       missedStatsEl.textContent =
         `Stats: ${s.percent}% (${s.correct}/${s.attempts} correct)`;
     }
   }
-  
-   // Build Teacher list (favorites + search, preserving original indexes)
+
+  // ===== Build Teacher list (with search + favorites) =====
   const teacherRows = teacherDB
     .map((w, i) => ({ w, i }))
     .filter(({ w }) => {
-      // favorites filter (if you ever re-enable it)
+      // favorites-only filter
       if (favOnly.teacher && !w.favorite) return false;
 
       // search filter
@@ -1234,11 +1235,13 @@ function renderLists() {
       return haystack.includes(term);
     });
 
-  teacherList.innerHTML = teacherRows.length
-    ? teacherRows.map(({ w, i }) => wordRow("teacher", i, w)).join("")
-    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+  if (teacherList) {
+    teacherList.innerHTML = teacherRows.length
+      ? teacherRows.map(({ w, i }) => wordRow("teacher", i, w)).join("")
+      : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+  }
 
-  // Build General list (favorites + search)
+  // ===== Build General list (with search + favorites) =====
   const generalRows = generalDB
     .map((w, i) => ({ w, i }))
     .filter(({ w }) => {
@@ -1251,9 +1254,13 @@ function renderLists() {
       return haystack.includes(term);
     });
 
-  generalList.innerHTML = generalRows.length
-    ? generalRows.map(({ w, i }) => wordRow("general", i, w)).join("")
-    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+  if (generalList) {
+    generalList.innerHTML = generalRows.length
+      ? generalRows.map(({ w, i }) => wordRow("general", i, w)).join("")
+      : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+  }
+
+  // ===== Stats =====
   const all = [...teacherDB, ...generalDB];
   const t = computeStats(teacherDB);
   const g = computeStats(generalDB);
@@ -1762,7 +1769,7 @@ function getPracticeWords() {
 }
 
 // Missed words still come from the full database (not limited by scope)
-function getMissedWords() {
+function getPracticeHubWords() {
   const all = getAllWords();
   return all.filter(w => {
     const c = (typeof w.confidence === "number") ? w.confidence : null;
@@ -2332,13 +2339,16 @@ window.answerArcadeMCQ = function (index) {
 let missedCardCurrent = null;
 
 window.newMissedCard = function () {
-  const missed = getMissedWords();
-  if (!missed.length) {
-    alert("No missed words yet.");
+  const groupWords = getPracticeHubWords();
+  if (!groupWords.length) {
+    alert("No words in this practice group yet. Try a different filter.");
     return;
   }
 
-  missedCardCurrent = srsPickWord(missed) || missed[Math.floor(Math.random() * missed.length)];
+  missedCardCurrent =
+    srsPickWord(groupWords) ||
+    groupWords[Math.floor(Math.random() * groupWords.length)];
+
   bumpSeen(missedCardCurrent);
 
   const front = document.getElementById("missed-flash-front");
@@ -2358,16 +2368,22 @@ window.flipMissedCard = function () {
 
 window.markMissedRight = function () {
   if (!missedCardCurrent) return;
-  missedCardCurrent.correct = (missedCardCurrent.correct || 0) + 1;
+
+  // Right = rate as "Good" (3), which will slowly promote confidence
+  updateConfidence(missedCardCurrent, 3);
+
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
-  renderLists();
-  newMissedCard();
+  renderLists();      // refresh Practice Hub list + stats
+  newMissedCard();    // next card
 };
 
 window.markMissedWrong = function () {
   if (!missedCardCurrent) return;
-  missedCardCurrent.wrong = (missedCardCurrent.wrong || 0) + 1;
+
+  // Wrong = rate as "Fail" (0), which will drop confidence quickly
+  updateConfidence(missedCardCurrent, 0);
+
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
@@ -2379,22 +2395,25 @@ let missedMCQCurrent = null;
 let missedMCQChoices = [];
 
 window.newMissedMCQ = function () {
-  const missed = getMissedWords();
-  if (missed.length < 2) {
-    alert("Need at least 2 missed words.");
+  const groupWords = getPracticeHubWords();
+  if (groupWords.length < 2) {
+    alert("Need at least 2 words in this practice group.");
     return;
   }
 
-  missedMCQCurrent = srsPickWord(missed) || missed[Math.floor(Math.random() * missed.length)];
+  missedMCQCurrent =
+    srsPickWord(groupWords) ||
+    groupWords[Math.floor(Math.random() * groupWords.length)];
   bumpSeen(missedMCQCurrent);
+
   const choices = [missedMCQCurrent];
 
-  while (choices.length < 4 && choices.length < missed.length) {
-    const c = missed[Math.floor(Math.random() * missed.length)];
+  while (choices.length < 4 && choices.length < groupWords.length) {
+    const c = groupWords[Math.floor(Math.random() * groupWords.length)];
     if (!choices.includes(c)) choices.push(c);
   }
 
-  // shuffle
+  // shuffle choices
   for (let i = choices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [choices[i], choices[j]] = [choices[j], choices[i]];
@@ -2422,10 +2441,12 @@ window.answerMissedMCQ = function (index) {
 
   if (chosen === missedMCQCurrent) {
     qEl.innerHTML += "<div style='margin-top:0.4rem;color:#18a34a;'>✅ Correct!</div>";
-    missedMCQCurrent.correct = (missedMCQCurrent.correct || 0) + 1;
+    // Correct MCQ → treat as "Good"
+    updateConfidence(missedMCQCurrent, 3);
   } else {
     qEl.innerHTML += `<div style='margin-top:0.4rem;color:#b91c1c;'>❌ Wrong. Correct: ${missedMCQCurrent.en}</div>`;
-    missedMCQCurrent.wrong = (missedMCQCurrent.wrong || 0) + 1;
+    // Wrong MCQ → treat as "Fail"
+    updateConfidence(missedMCQCurrent, 0);
   }
 
   saveLocalDB();
@@ -2434,24 +2455,27 @@ window.answerMissedMCQ = function (index) {
 
   setTimeout(window.newMissedMCQ, 1000);
 };
-
 /* --- Missed-only typing --- */
 let missedTypingCurrent = null;
 
 window.startMissedTyping = function () {
-  const missed = getMissedWords();
+  const groupWords = getPracticeHubWords();
   const promptEl = document.getElementById("missed-typing-prompt");
   const inputEl  = document.getElementById("missed-typing-input");
   const fbEl     = document.getElementById("missed-typing-feedback");
 
-  if (!missed.length) {
-    promptEl.innerText = "No missed words yet.";
+  if (!groupWords.length) {
+    promptEl.innerText = "No words in this practice group yet.";
     return;
   }
 
-  missedTypingCurrent = srsPickWord(missed) || missed[Math.floor(Math.random() * missed.length)];
+  missedTypingCurrent =
+    srsPickWord(groupWords) ||
+    groupWords[Math.floor(Math.random() * groupWords.length)];
+
   bumpSeen(missedTypingCurrent);
-promptEl.innerHTML = `
+
+  promptEl.innerHTML = `
     Translate into Hebrew (no vowels needed):<br>
     <strong>${missedTypingCurrent.en}</strong>
   `;
@@ -2482,10 +2506,12 @@ window.submitMissedTypingAnswer = function () {
 
   if (user === correct) {
     fbEl.innerHTML = "✅ Correct!";
-    missedTypingCurrent.correct = (missedTypingCurrent.correct || 0) + 1;
+    // Correct typing → "Good"
+    updateConfidence(missedTypingCurrent, 3);
   } else {
     fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
-    missedTypingCurrent.wrong = (missedTypingCurrent.wrong || 0) + 1;
+    // Wrong typing → "Fail"
+    updateConfidence(missedTypingCurrent, 0);
   }
 
   saveLocalDB();
