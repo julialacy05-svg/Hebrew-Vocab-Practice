@@ -638,6 +638,16 @@
   <option value="length-desc">Length (long→short)</option>
 </select>
   </label>
+  
+<!-- ⭐ FAVORITES FILTER (TEACHER) -->
+  <label style="display:block;font-size:0.8rem;color:#555;margin:4px 0 6px;">
+    <input
+      type="checkbox"
+      id="teacher-fav-only"
+      onchange="setFavFilter('teacher', this.checked)"
+    />
+    Show favorites only
+  </label>
 
   <div id="teacher-list" class="word-list"></div>
 </div>
@@ -658,6 +668,16 @@
 </select>
   </label>
 
+ <!-- ⭐ FAVORITES FILTER (GENERAL) -->
+  <label style="display:block;font-size:0.8rem;color:#555;margin:4px 0 6px;">
+    <input
+      type="checkbox"
+      id="general-fav-only"
+      onchange="setFavFilter('general', this.checked)"
+    />
+    Show favorites only
+  </label>
+  
   <div id="general-list" class="word-list"></div>
 </div>
 
@@ -989,6 +1009,18 @@ let teacherDB = [];
 let generalDB = [];
 let currentUser = null;
 
+// Favorites filter state
+let favOnly = {
+  teacher: false,
+  general: false
+};
+
+// Update favorites-only filter and re-render
+window.setFavFilter = function (dbName, isOn) {
+  favOnly[dbName] = !!isOn;
+  renderLists();
+};
+  
 // For undo (stores the state before the last add / bulk add)
 let lastAddSnapshot = null;
 
@@ -1122,14 +1154,23 @@ function renderLists() {
     }
   }
   
-  teacherList.innerHTML = teacherDB.length
-    ? teacherDB.map((w,i)=>wordRow("teacher", i, w)).join("")
-    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
+ // Build Teacher list (with optional favorites filter, preserving original indexes)
+const teacherRows = teacherDB
+  .map((w, i) => ({ w, i }))
+  .filter(({ w }) => !favOnly.teacher || w.favorite);
 
-  generalList.innerHTML = generalDB.length
-    ? generalDB.map((w,i)=>wordRow("general", i, w)).join("")
-    : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
+teacherList.innerHTML = teacherRows.length
+  ? teacherRows.map(({ w, i }) => wordRow("teacher", i, w)).join("")
+  : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
 
+// Build General list (same idea)
+const generalRows = generalDB
+  .map((w, i) => ({ w, i }))
+  .filter(({ w }) => !favOnly.general || w.favorite);
+
+generalList.innerHTML = generalRows.length
+  ? generalRows.map(({ w, i }) => wordRow("general", i, w)).join("")
+  : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words yet.</p>";
   const all = [...teacherDB, ...generalDB];
   const t = computeStats(teacherDB);
   const g = computeStats(generalDB);
@@ -1156,12 +1197,44 @@ function renderLists() {
 }
 
 function wordRow(db, index, w) {
+  const star = w.favorite ? "★" : "☆";
+
   return `
     <div style="padding:10px;border-bottom:1px solid #eee;">
-      <strong>${w.he}</strong> — ${w.en}
-      ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
-      <button onclick="deleteWord('${db}', ${index})"
-        style="margin-top:6px;background:#ff6f6f;color:white;border:none;padding:6px 12px;border-radius:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <strong>${w.he}</strong> — ${w.en}
+          ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
+        </div>
+
+        <button
+          onclick="toggleFavorite('${db}', ${index})"
+          style="
+            border:none;
+            background:none;
+            font-size:1.2rem;
+            cursor:pointer;
+            line-height:1;
+            padding:2px 4px;
+            color:${w.favorite ? "#f59e0b" : "#999"};
+          "
+          title="Toggle favorite"
+        >
+          ${star}
+        </button>
+      </div>
+
+      <button
+        onclick="deleteWord('${db}', ${index})"
+        style="
+          margin-top:6px;
+          background:#ff6f6f;
+          color:white;
+          border:none;
+          padding:6px 12px;
+          border-radius:6px;
+        "
+      >
         Delete
       </button>
     </div>
@@ -1177,6 +1250,18 @@ window.deleteWord = function (db, i) {
   renderLists();
 };
 
+window.toggleFavorite = function (dbName, index) {
+  const arr = dbName === "teacher" ? teacherDB : generalDB;
+  const w = arr[index];
+  if (!w) return;
+
+  w.favorite = !w.favorite; // flip true/false
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+};
+  
 window.addWord = function () {
   const he = document.getElementById("hebrew").value.trim();
   const tr = document.getElementById("translit").value.trim();
