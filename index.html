@@ -776,19 +776,6 @@
   </button>
 </div>
 
-    <h3 style="margin-top:1.6rem;">Multiple Choice</h3>
-    <button onclick="newMCQ()">New Question</button>
-
-    <div id="mcq-question" class="flashcard" style="margin-top:1rem;">
-      <div class="flashcard-inner">
-        <div class="flashcard-face flashcard-front">
-          Click "New Question" to begin
-        </div>
-      </div>
-    </div>
-
-    <div id="mcq-options" style="margin-top:12px;"></div>
-  </div>
 
   <!-- TAB CONTENT: AI TUTOR -->
   <div id="ai" class="tab-content">
@@ -1863,35 +1850,6 @@ window.rateGood = function () {
 
 window.rateEasy = function () {
   handleFlashcardRating(4);
-};
-/* ============================================================
-   MULTIPLE CHOICE (Flashcards tab)
-============================================================ */
-window.newMCQ = function () {
-  const all = getAllWords();
-  if (all.length < 2) return alert("Need at least 2 words.");
-
-  const correct = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
-  bumpSeen(correct);
-  const choices = [correct];
-
-  while (choices.length < 4 && choices.length < all.length) {
-    const c = all[Math.floor(Math.random()*all.length)];
-    if (!choices.includes(c)) choices.push(c);
-  }
-
-  document.getElementById("mcq-question").innerText = correct.he;
-
-  document.getElementById("mcq-options").innerHTML = choices.map(c => `
-    <button class="choice-btn"
-      onclick="checkMCQ('${c.en.replace(/'/g,"\\'")}', '${correct.en.replace(/'/g,"\\'")}')">
-      ${c.en}
-    </button>
-  `).join("");
-};
-
-window.checkMCQ = function (chosen, correct) {
-  alert(chosen === correct ? "Correct!" : "Wrong! Correct: " + correct);
 };
 
 /* ============================================================
