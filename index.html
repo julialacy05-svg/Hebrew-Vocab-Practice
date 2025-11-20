@@ -375,40 +375,45 @@
        FLASHCARD EFFECT
     ========================================== */
     .flashcard {
-      perspective: 1000px;
-    }
+  perspective: 1000px;
+  max-width: 700px;          /* wider card */
+  margin: 1.5rem auto;       /* centered */
+}
 
-    .flashcard-inner {
-      position: relative;
-      width: 100%;
-      min-height: 120px;
-      transform-style: preserve-3d;
-      transition: transform var(--transition-medium);
-    }
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  min-height: 55vh;          /* MUCH taller, like Anki */
+  transform-style: preserve-3d;
+  transition: transform var(--transition-medium);
+}
 
-    .flashcard.flipped .flashcard-inner {
-      transform: rotateY(180deg);
-    }
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
 
-    .flashcard-face {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: var(--card-shadow);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      background: white;
-    }
+.flashcard-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 
-    .flashcard-back {
-      transform: rotateY(180deg);
-    }
+  /* “Anki-ish” look */
+  background: #000000;
+  color: #ffffff;
+  font-size: clamp(2rem, 6vw, 3rem);  /* big on mobile, nice on desktop */
+}
 
+.flashcard-back {
+  transform: rotateY(180deg);
+}
     /* =========================================
        CHAT (AI TUTOR)
     ========================================== */
@@ -758,7 +763,8 @@
   <button onclick="flipCard()" style="flex:1 1 120px;">Flip</button>
 </div>
 
-<div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+<div id="flash-rating-row"
+     style="display:none;gap:10px;margin-top:8px;flex-wrap:wrap;">
   <button onclick="rateFail()" style="flex:1 1 80px;background:#ff6f6f;">
     Fail
   </button>
@@ -1795,6 +1801,11 @@ window.newCard = function () {
       front.innerText = "Add some words in the Manage Words tab first 🙂";
       back.innerText  = "Once you’ve added words, click “New Card” again.";
       card.classList.remove("flipped");
+
+  // hide rating buttons until user flips
+  const ratingRow = document.getElementById("flash-rating-row");
+  if (ratingRow) ratingRow.style.display = "none";
+      
     }
     return;
   }
@@ -1813,9 +1824,20 @@ window.newCard = function () {
 };
 
 window.flipCard = function () {
-  document.getElementById("flashcard").classList.toggle("flipped");
-};
+  const card = document.getElementById("flashcard");
+  const ratingRow = document.getElementById("flash-rating-row");
 
+  card.classList.toggle("flipped");
+
+  // ratings only visible when back of card is showing
+  if (ratingRow) {
+    if (card.classList.contains("flipped")) {
+      ratingRow.style.display = "flex";
+    } else {
+      ratingRow.style.display = "none";
+    }
+  }
+};
 function handleFlashcardRating(level) {
   // level: 0=Fail, 1=Bad, 2=OK, 3=Good, 4=Easy
   if (!currentCard) return;
