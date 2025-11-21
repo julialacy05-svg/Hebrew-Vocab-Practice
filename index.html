@@ -780,6 +780,15 @@
     </select>
   </label>
 
+  <!-- NEW: choose which database to study from -->
+  <label>Study from:
+    <select id="practice-scope" onchange="setPracticeScope(this.value)">
+      <option value="all" selected>All words</option>
+      <option value="teacher">Teacher Database</option>
+      <option value="general">General Database</option>
+    </select>
+  </label>
+
   <button onclick="newCard()">New Card</button>
 
   <div id="flashcard" class="flashcard" style="margin-top:1rem;">
