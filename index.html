@@ -414,6 +414,40 @@
 .flashcard-back {
   transform: rotateY(180deg);
 }
+
+/* Content layout on the BACK of the card */
+.flashcard-content {
+  width: 100%;
+  text-align: center;
+  padding: 0 10px;
+}
+
+.flashcard-question {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+}
+
+.flashcard-divider {
+  margin: 16px auto;
+  border: 0;
+  border-top: 1px solid #ddd;
+  max-width: 80%;
+}
+
+.flashcard-answer {
+  font-size: 1.4rem;
+  margin-top: 4px;
+}
+
+/* Rating row: hidden by default, shown via JS after flip */
+#flash-rating-row {
+  display: none;              /* JS will change to flex when showing */
+  display: none;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+    
     /* =========================================
        CHAT (AI TUTOR)
     ========================================== */
@@ -737,52 +771,55 @@
     
   <!-- TAB CONTENT: FLASHCARDS -->
   <div id="flash" class="tab-content">
-    <h2>Flashcards</h2>
+  <h2>Flashcards</h2>
 
-    <label>Mode:
-      <select id="flash-mode">
-        <option value="he-to-en">Hebrew → English</option>
-        <option value="en-to-he">English → Hebrew</option>
-      </select>
-    </label>
+  <label>Mode:
+    <select id="flash-mode">
+      <option value="he-to-en">Hebrew → English</option>
+      <option value="en-to-he">English → Hebrew</option>
+    </select>
+  </label>
 
-    <button onclick="newCard()">New Card</button>
+  <button onclick="newCard()">New Card</button>
 
-    <div id="flashcard" class="flashcard" style="margin-top:1rem;">
-      <div class="flashcard-inner" id="flashcard-inner">
-        <div class="flashcard-face flashcard-front" id="flashcard-front">
-          Click "New Card" to begin
-        </div>
-        <div class="flashcard-face flashcard-back" id="flashcard-back">
-          Click "New Card" to begin
-        </div>
+  <div id="flashcard" class="flashcard" style="margin-top:1rem;">
+    <div class="flashcard-inner" id="flashcard-inner">
+      <div class="flashcard-face flashcard-front" id="flashcard-front">
+        Click "New Card" to begin
+      </div>
+      <div class="flashcard-face flashcard-back" id="flashcard-back">
+        Click "New Card" to begin
       </div>
     </div>
+  </div>
 
-<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-  <button onclick="flipCard()" style="flex:1 1 120px;">Flip</button>
-</div>
+  <!-- Flip button (visible until you flip) -->
+  <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+    <button id="flash-flip-btn" onclick="flipCard()" style="flex:1 1 120px;">
+      Flip
+    </button>
+  </div>
 
-<div id="flash-rating-row"
-     style="display:none;gap:10px;margin-top:8px;flex-wrap:wrap;">
-  <button onclick="rateFail()" style="flex:1 1 80px;background:#ff6f6f;">
-    Fail
-  </button>
-  <button onclick="rateBad()" style="flex:1 1 80px;background:#ff9f40;">
-    Bad
-  </button>
-  <button onclick="rateOk()" style="flex:1 1 80px;background:#ffd95e;color:#7a5a00;">
-    OK
-  </button>
-  <button onclick="rateGood()" style="flex:1 1 80px;background:#3bc67d;">
-    Good
-  </button>
-  <button onclick="rateEasy()" style="flex:1 1 80px;background:#4fa3ff;">
-    Easy
-  </button>
-</div>
-
+  <!-- Rating row (hidden until AFTER flip) -->
+  <div id="flash-rating-row">
+    <button onclick="rateFail()" style="flex:1 1 80px;background:#ff6f6f;">
+      Fail
+    </button>
+    <button onclick="rateBad()" style="flex:1 1 80px;background:#ff9f40;">
+      Bad
+    </button>
+    <button onclick="rateOk()" style="flex:1 1 80px;background:#ffd95e;color:#7a5a00;">
+      OK
+    </button>
+    <button onclick="rateGood()" style="flex:1 1 80px;background:#3bc67d;">
+      Good
+    </button>
+    <button onclick="rateEasy()" style="flex:1 1 80px;background:#4fa3ff;">
+      Easy
+    </button>
+  </div>
 </div> <!-- END FLASH TAB -->
+
   <!-- TAB CONTENT: AI TUTOR -->
   <div id="ai" class="tab-content">
     <h2>AI Hebrew Tutor (Gemini)</h2>
@@ -1790,67 +1827,94 @@ function getPracticeHubWords() {
   
 window.newCard = function () {
   const all = getPracticeWords();
-
   const front = document.getElementById("flashcard-front");
   const back  = document.getElementById("flashcard-back");
   const card  = document.getElementById("flashcard");
-
-  // If there are no words yet, show a friendly message instead of an alert
-  if (!all.length) {
-    if (front && back && card) {
-      front.innerText = "Add some words in the Manage Words tab first 🙂";
-      back.innerText  = "Once you’ve added words, click “New Card” again.";
-      card.classList.remove("flipped");
-
-  // hide rating buttons until user flips
+  const flipBtn   = document.getElementById("flash-flip-btn");
   const ratingRow = document.getElementById("flash-rating-row");
+
+  if (!front || !back || !card) return;
+
+  // Hide the card while we update so you don't see the answer flash
+  card.style.visibility = "hidden";
+
+  // Always reset to front + hide ratings, show Flip
+  card.classList.remove("flipped");
+  if (flipBtn)   flipBtn.style.display   = "inline-block";
   if (ratingRow) ratingRow.style.display = "none";
-      
-    }
+
+  if (!all.length) {
+    front.innerText = 'Add some words in the "Manage Words" tab first 🙂';
+    back.innerHTML  = '';
+    card.style.visibility = "visible";
     return;
   }
 
-  // SRS: pick a word based on difficulty + time since seen
-  currentCard = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  // Pick word (SRS)
+  currentCard =
+    srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
   bumpSeen(currentCard);
+
   const mode = document.getElementById("flash-mode").value;
+  const frontText = (mode === "he-to-en")
+    ? currentCard.he
+    : currentCard.en;
 
-  front.innerText = (mode === "he-to-en") ? currentCard.he : currentCard.en;
-  back.innerText = (mode === "he-to-en")
-    ? currentCard.en + (currentCard.tr ? ` (${currentCard.tr})` : "")
-    : currentCard.he + (currentCard.tr ? ` (${currentCard.tr})` : "");
+  const backMain = (mode === "he-to-en")
+    ? currentCard.en
+    : currentCard.he;
 
-  card.classList.remove("flipped");
+  const backTr = currentCard.tr ? ` (${currentCard.tr})` : "";
+
+  // FRONT: just the question
+  front.innerText = frontText;
+
+  // BACK: question on top, divider, answer on bottom (Anki-style)
+  back.innerHTML = `
+    <div class="flashcard-content">
+      <div class="flashcard-question">${frontText}</div>
+      <hr class="flashcard-divider">
+      <div class="flashcard-answer">${backMain}${backTr}</div>
+    </div>
+  `;
+
+  card.style.visibility = "visible";
 };
 
 window.flipCard = function () {
-  const card = document.getElementById("flashcard");
+  const card      = document.getElementById("flashcard");
+  const flipBtn   = document.getElementById("flash-flip-btn");
   const ratingRow = document.getElementById("flash-rating-row");
 
+  if (!card || !currentCard) return;
+
+  const willBeFlipped = !card.classList.contains("flipped");
   card.classList.toggle("flipped");
 
-  // ratings only visible when back of card is showing
-  if (ratingRow) {
-    if (card.classList.contains("flipped")) {
-      ratingRow.style.display = "flex";
-    } else {
-      ratingRow.style.display = "none";
-    }
+  if (willBeFlipped) {
+    // We just flipped TO the back → hide Flip, show ratings
+    if (flipBtn)   flipBtn.style.display   = "none";
+    if (ratingRow) ratingRow.style.display = "flex";
+  } else {
+    // Flipped back to front (not super necessary, but keeps state sane)
+    if (flipBtn)   flipBtn.style.display   = "inline-block";
+    if (ratingRow) ratingRow.style.display = "none";
   }
 };
+  
 function handleFlashcardRating(level) {
-  // level: 0=Fail, 1=Bad, 2=OK, 3=Good, 4=Easy
   if (!currentCard) return;
 
   updateConfidence(currentCard, level);
 
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
-
-  // Update stats + Practice Hub lists
   renderLists();
 
-  // Move on to the next card
+  // Immediately go to next card; newCard() will:
+  // - reset to front
+  // - hide ratings
+  // - show Flip again
   newCard();
 }
 
