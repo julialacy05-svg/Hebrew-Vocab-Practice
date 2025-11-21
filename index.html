@@ -913,9 +913,19 @@
 <!-- SENTENCE BUILDER -->
 <div id="ui-builder" class="arcade-ui" style="display:none;">
   <h3>✏️ Sentence Builder</h3>
-  <p>Drag words into the correct order to build the sentence.</p>
+  <p>Drag words into the correct order to build the full line.</p>
 
-  <button onclick="startSentenceBuilder()">Start Sentence Builder</button>
+  <!-- NEW: length selector -->
+  <label style="display:block; margin-top:0.6rem; font-size:0.9rem; color:#555;">
+    Length:
+    <select id="builder-length" style="margin-top:4px; padding:6px 8px; border-radius:10px; font-size:0.9rem;">
+      <option value="phrase">Short phrase (2–4 words)</option>
+      <option value="sentence" selected>Sentence (5–10 words)</option>
+      <option value="paragraph">Long line (10–18 words)</option>
+    </select>
+  </label>
+
+  <button onclick="startSentenceBuilder()" style="margin-top:0.6rem;">Start Sentence Builder</button>
 
   <div id="builder-target" style="margin-top:1.2rem; min-height:60px;"></div>
   <div id="builder-words" style="margin-top:1.2rem; min-height:60px;"></div>
@@ -2006,52 +2016,121 @@ arcadeTiles.forEach(tile=>{
 let builderCurrent = null;
 let builderWords = [];
 let builderChosen = [];
+let builderSourceEntries = []; // all vocab entries used in the current builder line
   
-  window.startSentenceBuilder = function () {
-  const all = getPracticeWords().filter(
-  w => w.he.trim().split(/\s+/).length > 1
-);
+window.startSentenceBuilder = function () {
+  // Use practice scope (all / teacher / general / favorites)
+  const allPractice = getPracticeWords();
+
+  // We only care about vocab items with at least 2 Hebrew words
+  const multiWord = allPractice.filter(
+    w => (w.he || "").trim().split(/\s+/).length > 1
+  );
+
   const targetEl = document.getElementById("builder-target");
   const wordsEl  = document.getElementById("builder-words");
+  const lengthSelect = document.getElementById("builder-length");
+  const mode = lengthSelect ? lengthSelect.value : "sentence";
 
-  if (!all.length) {
-    targetEl.innerHTML = "<p>Add some multi-word phrases first.</p>";
-    wordsEl.innerHTML = "";
+  if (!multiWord.length) {
+    if (targetEl) {
+      targetEl.innerHTML = "<p>Add some multi-word phrases first (e.g. 2+ Hebrew words).</p>";
+    }
+    if (wordsEl) wordsEl.innerHTML = "";
     return;
   }
 
-  // pick a multi-word phrase via SRS
-  builderCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
-  bumpSeen(builderCurrent);
-builderWords   = builderCurrent.he.trim().split(/\s+/);
-builderChosen  = [];
+  // Decide how many words we want based on mode
+  let minWords, maxWords, maxPhrases;
+  if (mode === "phrase") {
+    minWords = 2;
+    maxWords = 4;
+    maxPhrases = 1;
+  } else if (mode === "sentence") {
+    minWords = 5;
+    maxWords = 10;
+    maxPhrases = 3;
+  } else {
+    // "paragraph"
+    minWords = 10;
+    maxWords = 18;
+    maxPhrases = 6;
+  }
 
-  // build target area + feedback container
+  // Shuffle a copy of multiWord
+  const shuffled = [...multiWord].sort(() => Math.random() - 0.5);
+
+  let chosenEntries = [];
+  let totalWords = 0;
+
+  for (const w of shuffled) {
+    const count = (w.he || "").trim().split(/\s+/).length;
+    if (!count) continue;
+
+    chosenEntries.push(w);
+    totalWords += count;
+
+    // stop if we reached our goals
+    if (totalWords >= minWords || chosenEntries.length >= maxPhrases) break;
+    if (totalWords >= maxWords) break;
+  }
+
+  // Fallback: if something weird happened
+  if (!chosenEntries.length) {
+    chosenEntries = [shuffled[0]];
+    totalWords = (shuffled[0].he || "").trim().split(/\s+/).length;
+  }
+
+  // bump "seen" on all the vocab items used
+  chosenEntries.forEach(bumpSeen);
+
+  // Build the FINAL target Hebrew + English text
+  const targetHebrew = chosenEntries
+    .map(w => (w.he || "").trim())
+    .join(" ");
+
+  const targetEnglish = chosenEntries
+    .map(w => w.en || "")
+    .join(" · ");
+
+  // Store for use in checkSentenceBuilderAnswer
+  builderSourceEntries = chosenEntries;
+  builderCurrent = {
+    he: targetHebrew,
+    en: targetEnglish
+  };
+
+  builderWords  = targetHebrew.split(/\s+/);
+  builderChosen = [];
+
+  // Build target area + feedback container
   targetEl.innerHTML = `
     <div style="margin-bottom:0.4rem;">
       Arrange the words to form:<br>
-      <span style="font-size:0.95rem;color:#555;">${builderCurrent.en}</span>
+      <span style="font-size:0.95rem;color:#555;">${targetEnglish}</span>
     </div>
     <div id="builder-target-words"
          style="min-height:40px;border:1px dashed #ccc;padding:8px;border-radius:10px;"></div>
     <div id="builder-feedback" style="margin-top:0.4rem;font-size:0.9rem;"></div>
   `;
 
-  // shuffle the word order
+  // shuffle word order
   const indices = builderWords.map((_, i) => i);
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [indices[i], indices[j]] = [indices[j], indices[i]];
   }
 
-  wordsEl.innerHTML = indices.map(i => `
-    <button class="choice-btn"
-            style="display:inline-block;margin:4px 4px 0 0;"
-            onclick="builderChoose(${i})"
-            id="builder-word-${i}">
-      ${builderWords[i]}
-    </button>
-  `).join("");
+  wordsEl.innerHTML = indices
+    .map(i => `
+      <button class="choice-btn"
+              style="display:inline-block;margin:4px 4px 0 0;"
+              onclick="builderChoose(${i})"
+              id="builder-word-${i}">
+        ${builderWords[i]}
+      </button>
+    `)
+    .join("");
 };
 
 window.builderChoose = function (idx) {
@@ -2085,27 +2164,35 @@ function checkSentenceBuilderAnswer() {
   const fb = document.getElementById("builder-feedback");
   if (!fb || !builderCurrent) return;
 
-  const built = builderChosen.map(i => builderWords[i]).join(" ");
+  const built   = builderChosen.map(i => builderWords[i]).join(" ");
   const correct = builderWords.join(" ");
 
   const builtStripped   = stripNikud(built);
   const correctStripped = stripNikud(correct);
 
-  if (builtStripped === correctStripped) {
+  const isCorrect = (builtStripped === correctStripped);
+
+  if (isCorrect) {
     fb.style.color = "#18a34a";
     fb.textContent = "✅ Correct!";
-    builderCurrent.correct = (builderCurrent.correct || 0) + 1;
+    // mark each vocab entry used as correct
+    (builderSourceEntries || []).forEach(w => {
+      w.correct = (w.correct || 0) + 1;
+    });
   } else {
     fb.style.color = "#b91c1c";
     fb.innerHTML = `❌ Not quite.<br>Correct: <strong>${correct}</strong>`;
-    builderCurrent.wrong = (builderCurrent.wrong || 0) + 1;
+    // mark each vocab entry used as wrong
+    (builderSourceEntries || []).forEach(w => {
+      w.wrong = (w.wrong || 0) + 1;
+    });
   }
 
   saveLocalDB();
   if (currentUser) saveCloudDB(currentUser.uid);
   renderLists();
 
-  // auto-start a new one after a pause
+  // auto-start a new one after a short delay
   setTimeout(window.startSentenceBuilder, 1500);
 }
 /* ============================================================
