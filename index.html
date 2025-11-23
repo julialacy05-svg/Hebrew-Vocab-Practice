@@ -1,0 +1,2926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hebrew Vocab Trainer + AI Tutor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Google Font: Assistant -->
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =========================================
+       GLOBAL ROOT COLORS + VARIABLES
+    ========================================== */
+    :root {
+      --font-main: "Assistant", sans-serif;
+
+      /* Core Colors */
+      --purple: #6c63ff;
+      --pink: #ff6fb7;
+      --blue: #4fa3ff;
+      --green: #3bc67d;
+      --yellow: #ffd95e;
+      --orange: #ff9f40;
+      --red: #ff6f6f;
+
+      /* Soft Pastels */
+      --pastel-red: #ffe5e5;
+      --pastel-blue: #e4f1ff;
+      --pastel-green: #e5ffef;
+      --pastel-purple: #f1eaff;
+      --pastel-yellow: #fff8dc;
+      --pastel-orange: #ffeede;
+
+      /* Text */
+      --text-dark: #1f1f1f;
+      --text-medium: #4b4b4b;
+      --text-light: #6f6f6f;
+
+      /* Cards */
+      --card-bg: #ffffff;
+      --card-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+      /* Soft Motion */
+      --transition-fast: 0.18s ease;
+      --transition-medium: 0.35s ease;
+    }
+
+    /* =========================================
+       GLOBAL RESETS
+    ========================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: linear-gradient(
+        135deg,
+        #f5f5ff,
+        #f0f7ff,
+        #fff5f7
+      );
+      background-size: 140% 140%;
+      animation: softBackground 14s ease-in-out infinite;
+      padding-bottom: 50px;
+      color: var(--text-dark);
+    }
+
+    @keyframes softBackground {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 70%; }
+      100% { background-position: 0% 0%; }
+    }
+
+  /* =========================================
+   HEADER + TOP-RIGHT AUTH
+========================================= */
+.app-header {
+  background: linear-gradient(90deg, var(--purple), var(--pink));
+  color: white;
+  padding: 0.8rem 1.5rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  animation: headerFade var(--transition-medium);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-left h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.header-left small {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* Mini auth bar on the right */
+.auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.12);
+  padding: 6px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.auth-status {
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-bar input {
+  width: 130px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.8rem;
+}
+
+.auth-bar input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+.auth-bar button {
+  width: auto;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  color: var(--purple);
+  box-shadow: none;
+}
+
+.auth-bar button:hover {
+  background: #ffffff;
+}
+
+/* Hide logout by default; we show it via JS after login */
+#auth-logout {
+  display: none;
+}
+    
+/* On small screens, stack auth below title */
+@media (max-width: 700px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .auth-bar {
+    align-self: stretch;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+    /* =========================================
+       MAIN CONTAINER
+    ========================================== */
+    main {
+      max-width: 1000px;
+      margin: 1rem auto 2rem;
+      background: rgba(255,255,255,0.88);
+      border-radius: 24px;
+      padding: 1.4rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+      backdrop-filter: blur(8px);
+      animation: fadeInUp var(--transition-medium);
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+   /* =========================================
+   TAB BAR (bigger, more visible)
+========================================= */
+.tab-bar {
+  display: flex;
+  gap: 12px;
+  margin: 1.2rem 0 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tab {
+  background: #ececff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--purple);
+  border: 2px solid transparent;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  letter-spacing: 0.02em;
+}
+
+.tab:hover {
+  background: #dedcff;
+  transform: translateY(-2px);
+}
+
+.tab.active {
+  background: white;
+  color: var(--purple);
+  border-color: white;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+}
+
+    /* =========================================
+       TAB CONTENT
+    ========================================== */
+    .tab-content {
+      display: none;
+      animation: fadeInTab var(--transition-medium);
+    }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* =========================================
+       INPUT FIELDS + BUTTONS
+    ========================================== */
+    input, textarea, select, button {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #d0d0e7;
+      margin: 8px 0 12px;
+      font-size: 1rem;
+      transition: var(--transition-fast);
+      font-family: var(--font-main);
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.18);
+      outline: none;
+    }
+
+    button {
+      background: var(--purple);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(108,99,255,0.35);
+      border: none;
+      transition: var(--transition-fast);
+    }
+
+    button:hover {
+      background: #584ee3;
+      transform: translateY(-2px);
+    }
+/* =========================================
+   MCQ / Arcade Choice Buttons
+========================================= */
+.choice-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #ffffff;
+  color: var(--text-dark); 
+  text-align: left;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.choice-btn:hover {
+  background: #f4f4ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(108,99,255,0.2);
+}
+    /* =========================================
+       PRACTICE ARCADE — TILE GRID
+    ========================================== */
+    .arcade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 18px;
+      margin-bottom: 2rem;
+      margin-top: 1rem;
+    }
+
+    .arcade-tile {
+      background: white;
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.05rem;
+      box-shadow: var(--card-shadow);
+      transition: var(--transition-medium);
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .arcade-tile:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    }
+
+    .tile-red { background: var(--pastel-red); color: var(--red); }
+    .tile-blue { background: var(--pastel-blue); color: var(--blue); }
+    .tile-green { background: var(--pastel-green); color: var(--green); }
+    .tile-yellow { background: var(--pastel-yellow); color: var(--yellow); }
+    .tile-orange { background: var(--pastel-orange); color: var(--orange); }
+    .tile-purple { background: var(--pastel-purple); color: var(--purple); }
+
+    /* =========================================
+       ADVANCED TOOLS SECTION
+    ========================================== */
+    .advanced-section {
+      margin-top: 1rem;
+    }
+
+    .advanced-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: var(--text-medium);
+    }
+
+    .advanced-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+    }
+
+    .advanced-item {
+      background: #fafaff;
+      border-radius: 16px;
+      border-left: 5px solid var(--purple);
+      padding: 14px;
+      box-shadow: var(--card-shadow);
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .advanced-item:hover {
+      transform: translateY(-3px);
+      background: #f2f2ff;
+    }
+
+    /* =========================================
+       FLASHCARD EFFECT
+    ========================================== */
+    .flashcard {
+  perspective: 1000px;
+  max-width: 700px;          /* wider card */
+  margin: 1.5rem auto;       /* centered */
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  min-height: 55vh;          /* MUCH taller, like Anki */
+  transform-style: preserve-3d;
+  transition: transform var(--transition-medium);
+}
+
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  /* “Anki-ish” look */
+  background: #white;
+  color:var(--text-dark);
+  font-size: clamp(2rem, 6vw, 3rem);  /* big on mobile, nice on desktop */
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+/* Content layout on the BACK of the card */
+.flashcard-content {
+  width: 100%;
+  text-align: center;
+  padding: 0 10px;
+}
+
+.flashcard-question {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+}
+
+.flashcard-divider {
+  margin: 16px auto;
+  border: 0;
+  border-top: 1px solid #ddd;
+  max-width: 80%;
+}
+
+.flashcard-answer {
+  font-size: 1.4rem;
+  margin-top: 4px;
+}
+
+/* Rating row: hidden by default, shown via JS after flip */
+#flash-rating-row {
+  display: none;              /* JS will change to flex when showing */
+  display: none;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+    
+
+
+    /* Teacher / General database layout */
+.db-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.db-card {
+  flex: 1 1 0;
+  min-width: 260px;
+  background: #fafafa;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  padding: 10px 12px;
+}
+
+/* Header inside each card */
+.db-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.db-card-title {
+  font-weight: 700;
+}
+
+.db-card-stats {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+/* Scrollable word list inside each card */
+.word-list {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* Overall stats line under both cards */
+.overall-stats {
+  font-size: 0.85rem;
+  color: #666;
+}
+    
+  </style>
+</head>
+
+  
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <h1>Hebrew Vocab Trainer + AI Tutor</h1>
+    <small>Your personalized Hebrew learning platform</small>
+  </div>
+
+  <div class="auth-bar">
+    <div class="auth-status">
+      <span id="auth-status-text">Not signed in</span>
+    </div>
+    <input id="auth-email" type="email" placeholder="Email" />
+    <input id="auth-password" type="password" placeholder="Password" />
+    <button id="auth-login">Log in</button>
+    <button id="auth-signup">Sign up</button>
+    <button id="auth-logout">Log out</button>
+  </div>
+</header>
+
+<main>
+
+ 
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <span class="tab active" data-tab="manage">Manage Words</span>
+    <span class="tab" data-tab="missed">Practice Hub</span>
+    <span class="tab" data-tab="flash">Flashcards</span>
+    <span class="tab" data-tab="arcade">Practice Arcade 🎯</span>
+  </div>
+
+<!-- TAB CONTENT: PRACTICE HUB -->
+<div id="missed" class="tab-content">
+  <h2>Practice Hub</h2>
+
+  <p style="color:#555;margin-bottom:0.75rem;">
+    Practice words by confidence level (Fail, Bad, OK, Good, Easy).
+  </p>
+
+  <label style="font-size:0.85rem;color:#555;display:block;margin-bottom:0.4rem;">
+    Practice group:
+    <select id="practice-hub-filter"
+            onchange="setPracticeHubFilter(this.value)"
+            style="margin-top:4px;padding:6px 8px;border-radius:10px;font-size:0.9rem;">
+      <option value="fail-bad" selected>Low confidence (Fail + Bad)</option>
+      <option value="fail">Fail only</option>
+      <option value="bad">Bad only</option>
+      <option value="ok">OK</option>
+      <option value="good">Good</option>
+      <option value="easy">Easy</option>
+      <option value="all">All rated words</option>
+    </select>
+  </label>
+
+  <!-- Practice hub word list -->
+  <div class="db-row" style="margin-top:0.8rem;">
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-card-title">Practice Hub Words</div>
+          <div class="db-card-stats" id="missed-stats">Stats: no attempts yet</div>
+        </div>
+        <div id="missed-list" class="word-list"></div>
+      </div>
+    </div>
+
+    <!-- Missed-only flashcards -->
+    <h3 style="margin-top:1.8rem;">Flashcards (Current Practice Group)</h3>
+    <button onclick="newMissedCard()">New Card</button>
+
+    <div id="missed-flashcard" class="flashcard" style="margin-top:1rem;">
+      <div class="flashcard-inner" id="missed-flash-inner">
+        <div class="flashcard-face flashcard-front" id="missed-flash-front">
+          Click "New Card" to begin
+        </div>
+        <div class="flashcard-face flashcard-back" id="missed-flash-back">
+          Click "New Card" to begin
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button onclick="flipMissedCard()" style="flex:1 1 120px;">Flip</button>
+      <button onclick="markMissedRight()" style="flex:1 1 120px;background:#3bc67d;">I got it right</button>
+      <button onclick="markMissedWrong()" style="flex:1 1 120px;background:#ff6f6f;">I got it wrong</button>
+    </div>
+
+    <!-- Missed-only MCQ -->
+    <h3 style="margin-top:1.8rem;">Multiple Choice (Current Practice Group)</h3>
+    <button onclick="newMissedMCQ()">New Question</button>
+
+    <div id="missed-mcq-question" style="margin-top:1.3rem; font-size:1.1rem;"></div>
+    <div id="missed-mcq-options" style="margin-top:1rem;"></div>
+
+    <!-- Missed-only typing -->
+    <h3 style="margin-top:1.8rem;">Typing Practice (Current Practice Group)</h3>
+    <button onclick="startMissedTyping()">Begin Typing Practice</button>
+
+    <div id="missed-typing-prompt" style="margin-top:1.3rem; font-size:1.2rem;"></div>
+
+    <textarea id="missed-typing-input"
+              placeholder="Type Hebrew here (no vowels needed)..."
+              style="margin-top:1.2rem;"></textarea>
+    <button onclick="submitMissedTypingAnswer()">Submit</button>
+
+    <div id="missed-typing-feedback" style="margin-top:1rem;"></div>
+  </div>
+
+  
+  <!-- TAB CONTENT: MANAGE WORDS -->
+  <div id="manage" class="tab-content active">
+    <h2>Manage Your Hebrew Words</h2>
+
+    <label>Hebrew (with vowels if possible)
+      <input id="hebrew" placeholder="מָה אַתָּה אוֹהֵב לַעֲשׂוֹת" />
+    </label>
+
+    <label>Transliteration (optional)
+      <input id="translit" placeholder="mah ata ohev la'asot" />
+    </label>
+
+    <label>English Meaning
+      <input id="english" placeholder="What do you like to do?" />
+    </label>
+
+<label>Save word to:
+  <select id="db-select">
+    <option value="teacher">Teacher Database</option>
+    <option value="general">General Database</option>
+  </select>
+</label>
+
+<button id="add-word-btn" onclick="addWord()">Add Word</button>
+<button onclick="undoLastAdd()" style="margin-left:0; margin-top:4px;">
+  Undo last add
+</button>
+<button id="cancel-edit-btn" onclick="cancelEdit()" 
+        style="margin-left:0; margin-top:4px; display:none; background:#999; color:white;">
+  Cancel Edit
+</button>
+
+<div id="edit-status" style="margin-top:4px; font-size:0.85rem; color:#555;"></div>
+
+<div class="db-row" style="margin-top:1.5rem;">
+
+<div class="db-card">
+  <div class="db-card-header">
+    <div class="db-card-title">Teacher Database</div>
+    <div class="db-card-stats" id="teacher-stats">Stats: no attempts yet</div>
+  </div>
+
+  <!-- SEARCH BAR: TEACHER -->
+  <label style="font-size:0.85rem;color:#555;display:block;margin-bottom:4px;">
+    Search:
+    <input
+      id="teacher-search"
+      type="text"
+      placeholder="Search Hebrew / English..."
+      oninput="updateSearchTerm('teacher', this.value)"
+      style="margin-top:4px;padding:6px 8px;border-radius:10px;font-size:0.9rem;"
+    />
+  </label>
+  
+<!-- SORT DROPDOWN (includes favorites) -->
+<label style="font-size:0.85rem;color:#555;">Sort:
+  <select onchange="sortDB('teacher', this.value)">
+    <option value="recent">Most Recent</option>
+    <option value="grade">Best Grade</option>
+    <option value="length">Length (short→long)</option>
+    <option value="length-desc">Length (long→short)</option>
+    <option value="fav-only">Favorites only (best grade)</option>
+  </select>
+</label>
+
+  <div id="teacher-list" class="word-list"></div>
+</div>
+<div class="db-card">
+  <div class="db-card-header">
+    <div class="db-card-title">General Database</div>
+    <div class="db-card-stats" id="general-stats">Stats: no attempts yet</div>
+  </div>
+
+  <!-- SEARCH BAR: GENERAL -->
+  <label style="font-size:0.85rem;color:#555;display:block;margin-bottom:4px;">
+    Search:
+    <input
+      id="general-search"
+      type="text"
+      placeholder="Search Hebrew / English..."
+      oninput="updateSearchTerm('general', this.value)"
+      style="margin-top:4px;padding:6px 8px;border-radius:10px;font-size:0.9rem;"
+    />
+  </label>
+  
+<!-- SORT DROPDOWN (includes favorites) -->
+<label style="font-size:0.85rem;color:#555;">Sort:
+  <select onchange="sortDB('general', this.value)">
+    <option value="recent">Most Recent</option>
+    <option value="grade">Best Grade</option>
+    <option value="length">Length (short→long)</option>
+    <option value="length-desc">Length (long→short)</option>
+    <option value="fav-only">Favorites only (best grade)</option>
+  </select>
+</label>
+
+  <div id="general-list" class="word-list"></div>
+</div>
+
+</div>
+
+<div id="overall-stats" class="overall-stats" style="margin-top:0.8rem;"></div>
+
+    <h3 style="margin-top:1.8rem;">Bulk Import</h3>
+    <p class="hint">
+      Paste multiple lines like:<br>
+      <code>שלום, shalom, hello</code><br>
+      <code>מה נשמע, how are you</code>
+    </p>
+
+<textarea id="bulk-input" placeholder="שלום, shalom, hello&#10;מה שלומך, how are you"></textarea>
+<button onclick="bulkAdd()">Bulk Add</button>
+<button onclick="undoLastAdd()" style="margin-top:4px;">
+  Undo last add
+</button>
+<div id="bulk-status" style="font-size:0.85rem;color:#555;"></div>
+</div> <!-- END MANAGE TAB -->
+    
+  <!-- TAB CONTENT: FLASHCARDS -->
+  <div id="flash" class="tab-content">
+  <h2>Flashcards</h2>
+
+  <label>Mode:
+    <select id="flash-mode">
+      <option value="he-to-en">Hebrew → English</option>
+      <option value="en-to-he">English → Hebrew</option>
+    </select>
+  </label>
+
+  <!-- NEW: choose which database to study from -->
+  <label>Study from:
+    <select id="practice-scope" onchange="setPracticeScope(this.value)">
+      <option value="all" selected>All words</option>
+      <option value="teacher">Teacher Database</option>
+      <option value="general">General Database</option>
+    </select>
+  </label>
+
+  <button onclick="newCard()">New Card</button>
+
+  <div id="flashcard" class="flashcard" style="margin-top:1rem;">
+    <div class="flashcard-inner" id="flashcard-inner">
+      <div class="flashcard-face flashcard-front" id="flashcard-front">
+        Click "New Card" to begin
+      </div>
+      <div class="flashcard-face flashcard-back" id="flashcard-back">
+        Click "New Card" to begin
+      </div>
+    </div>
+  </div>
+
+  <!-- Flip button (visible until you flip) -->
+  <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+    <button id="flash-flip-btn" onclick="flipCard()" style="flex:1 1 120px;">
+      Flip
+    </button>
+  </div>
+
+  <!-- Rating row (hidden until AFTER flip) -->
+  <div id="flash-rating-row">
+    <button onclick="rateFail()" style="flex:1 1 80px;background:#ff6f6f;">
+      Fail
+    </button>
+    <button onclick="rateBad()" style="flex:1 1 80px;background:#ff9f40;">
+      Bad
+    </button>
+    <button onclick="rateOk()" style="flex:1 1 80px;background:#ffd95e;color:#7a5a00;">
+      OK
+    </button>
+    <button onclick="rateGood()" style="flex:1 1 80px;background:#3bc67d;">
+      Good
+    </button>
+    <button onclick="rateEasy()" style="flex:1 1 80px;background:#4fa3ff;">
+      Easy
+    </button>
+  </div>
+</div> <!-- END FLASH TAB -->
+
+  <!-- TAB CONTENT: PRACTICE ARCADE 🎯 -->
+  <div id="arcade" class="tab-content">
+    <h2>Practice Arcade 🎯</h2>
+    <p style="color:#555;margin-bottom:1rem;">
+      Choose a practice mode below. (Game logic added in later chunks)
+    </p>
+
+    <!-- GAME TILE GRID -->
+    <div class="arcade-grid">
+
+
+      <!-- Sentence Builder (Purple) -->
+      <div class="arcade-tile tile-purple" data-tool="builder">
+        ✏️ Sentence Builder
+      </div>
+
+      <!-- Listening Mode (Blue) -->
+      <div class="arcade-tile tile-blue" data-tool="listening">
+        🎧 Listening Mode
+      </div>
+
+      <!-- Random Sentence Generator (Yellow) -->
+      <div class="arcade-tile tile-yellow" data-tool="generator">
+        🔀 Random Sentences
+      </div>
+
+      <!-- Typing Mode (Green) -->
+      <div class="arcade-tile tile-green" data-tool="typing">
+        ⌨️ Typing Practice
+      </div>
+
+      <!-- Multiple Choice Mode (Orange) -->
+      <div class="arcade-tile tile-orange" data-tool="mcq">
+        🟧 Multiple Choice
+      </div>
+
+    </div>
+
+    <!-- ADVANCED TOOLS SECTION -->
+    <div class="advanced-section">
+      <div class="advanced-title">Advanced Tools</div>
+
+      <div class="advanced-list">
+        <div class="advanced-item" data-tool="patterns">📊 Grammar Pattern Detector</div>
+        <div class="advanced-item" data-tool="vowelizer">🔡 Auto-Vowelizer</div>
+        <div class="advanced-item" data-tool="adaptive">📈 Adaptive Difficulty</div>
+        <div class="advanced-item" data-tool="conversation">🗣️ Conversation Simulator</div>
+        <div class="advanced-item" data-tool="settings">⚙️ Practice Settings</div>
+      </div>
+    </div>
+
+    <!-- EMPTY TOOL OUTPUT AREA (we fill this in later) -->
+    <div id="arcade-output" style="margin-top:2rem;"></div>
+
+    <!-- ================================
+     PRACTICE ARCADE INTERNAL UIs
+     (These remain hidden until a tile is clicked)
+================================ -->
+
+<!-- SENTENCE BUILDER -->
+ <div id="ui-builder" class="arcade-ui" style="display:none;">
+  <h3>✏️ Sentence Builder</h3>
+  <p>Click the words in order to build the sentence.</p>
+
+  <label style="display:block;margin-top:0.5rem;font-size:0.9rem;color:#555;">
+    Sentence length:
+    <select id="builder-length"
+            style="margin-left:0.4rem;padding:4px 8px;border-radius:8px;font-size:0.9rem;">
+      <option value="short">Short phrase (2–4 words)</option>
+      <option value="medium" selected>Sentence (5–8 words)</option>
+      <option value="long">Long sentence (9+ words)</option>
+    </select>
+  </label>
+
+  <button onclick="startSentenceBuilder()"
+          style="margin-top:0.6rem;">
+    Start Sentence Builder
+  </button>
+
+  <div id="builder-target" style="margin-top:1.2rem; min-height:60px;"></div>
+  <div id="builder-words" style="margin-top:1.2rem; min-height:60px;"></div>
+</div>
+
+<!-- LISTENING MODE -->
+<div id="ui-listening" class="arcade-ui" style="display:none;">
+  <h3>🎧 Listening Mode</h3>
+  <p>Listen and type the Hebrew you hear. You can replay the audio or reveal a hint if you’re stuck.</p>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:0.5rem;">
+    <button onclick="startListeningMode()" style="flex:1 1 120px;">Start Listening</button>
+    <button onclick="replayListening()" style="flex:1 1 120px;">Play Again 🔁</button>
+    <button onclick="showListeningHint()" style="flex:1 1 120px;">Show Hint 💡</button>
+  </div>
+
+  <!-- keeping this in case you ever want real audio files later -->
+  <audio id="listening-audio" controls style="margin-top:1rem; width:100%; display:none;"></audio>
+
+  <div id="listening-hint"
+       style="margin-top:0.8rem; font-size:0.9rem; color:#555; display:none;"></div>
+
+  <textarea id="listening-input"
+            placeholder="Type what you heard..."
+            style="margin-top:1rem;"></textarea>
+  <button onclick="submitListeningAnswer()">Submit</button>
+
+  <div id="listening-feedback" style="margin-top:1rem;"></div>
+</div>
+
+<!-- RANDOM SENTENCE GENERATOR -->
+<div id="ui-generator" class="arcade-ui" style="display:none;">
+  <h3>🔀 Random Sentence Generator</h3>
+  <p>Generates a random sentence using only your vocabulary.</p>
+
+  <button onclick="generateRandomSentence()">Generate Sentence</button>
+
+  <div id="generated-sentence" style="margin-top:1.3rem; font-size:1.2rem; font-weight:600;"></div>
+</div>
+
+<!-- TYPING MODE -->
+<div id="ui-typing" class="arcade-ui" style="display:none;">
+  <h3>⌨️ Typing Practice</h3>
+ <p>Type the translation of the prompt in Hebrew (vowels optional).</p>
+
+  <button onclick="startTypingMode()">Begin Typing Practice</button>
+
+  <div id="typing-prompt" style="margin-top:1.3rem; font-size:1.2rem;"></div>
+
+<textarea id="typing-input" placeholder="Type Hebrew here (vowels optional)..." style="margin-top:1.2rem;"></textarea>
+  <button onclick="submitTypingAnswer()">Submit</button>
+
+  <div id="typing-feedback" style="margin-top:1rem;"></div>
+</div>
+
+<!-- MULTIPLE CHOICE MODE -->
+<div id="ui-mcq" class="arcade-ui" style="display:none;">
+  <h3>🟧 Multiple Choice Mode</h3>
+  <p>Select the correct translation.</p>
+
+  <button onclick="startArcadeMCQ()">Start MCQ</button>
+
+  <div id="arcade-mcq-question" style="margin-top:1.3rem; font-size:1.2rem;"></div>
+  <div id="arcade-mcq-options" style="margin-top:1rem;"></div>
+</div>
+
+<!-- GRAMMAR PATTERN DETECTOR -->
+<div id="ui-patterns" class="arcade-ui" style="display:none;">
+  <h3>📊 Grammar Pattern Detector</h3>
+  <p>Tracks repeated mistakes and shows personalized insights.</p>
+
+  <button onclick="analyzePatterns()">Analyze My Mistakes</button>
+
+  <div id="patterns-output" style="margin-top:1.3rem;"></div>
+</div>
+
+<!-- AUTO-VOWELIZER -->
+<div id="ui-vowelizer" class="arcade-ui" style="display:none;">
+  <h3>🔡 Auto-Vowelizer</h3>
+  <p>Type Hebrew without vowels — this tool suggests nikud and highlights errors.</p>
+
+  <textarea id="vowelizer-input" placeholder="Type Hebrew without vowels..."></textarea>
+  <button onclick="vowelize()">Vowelize</button>
+
+  <div id="vowelizer-output" style="margin-top:1.3rem; font-size:1.1rem;"></div>
+</div>
+
+<!-- ADAPTIVE DIFFICULTY -->
+<div id="ui-adaptive" class="arcade-ui" style="display:none;">
+  <h3>📈 Adaptive Difficulty Mode</h3>
+  <p>This adjusts difficulty based on your performance.</p>
+
+  <button onclick="startAdaptive()">Start Adaptive Practice</button>
+
+  <div id="adaptive-output" style="margin-top:1.3rem;"></div>
+</div>
+
+<!-- CONVERSATION SIMULATOR -->
+<div id="ui-conversation" class="arcade-ui" style="display:none;">
+  <h3>🗣️ Conversation Simulator</h3>
+  <p>Simulated AI conversation using only your vocabulary.</p>
+
+  <button onclick="startConversation()">Start Conversation</button>
+
+  <div id="conversation-chat" class="chat-box" style="margin-top:1rem;"></div>
+
+  <textarea id="conversation-input" placeholder="Type in Hebrew..."></textarea>
+  <button onclick="sendConversation()">Send</button>
+</div>
+
+
+<!-- SETTINGS -->
+<div id="ui-settings" class="arcade-ui" style="display:none;">
+  <h3>⚙️ Practice Settings</h3>
+  <p>Customize strictness levels, pacing, hints, etc.</p>
+
+  <label>Strict Grading Mode
+    <select id="setting-strict">
+      <option value="on">On (recommended)</option>
+      <option value="off">Off</option>
+    </select>
+  </label>
+
+  <label>Pacing
+    <select id="setting-pace">
+      <option value="slow">Slow</option>
+      <option value="normal" selected>Normal</option>
+      <option value="fast">Fast</option>
+    </select>
+  </label>
+
+  <button onclick="savePracticeSettings()">Save Settings</button>
+
+  <div id="settings-status" style="margin-top:1rem;"></div>
+</div>
+  </div>
+
+</main>
+<script type="module">
+
+/* ============================================================
+   FIREBASE INITIALIZATION
+============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDWXr9Ugag1WhzHBak7AaMiN94EQ9UXls4",
+  authDomain: "hebrew-vocab-fae49.firebaseapp.com",
+  projectId: "hebrew-vocab-fae49",
+  storageBucket: "hebrew-vocab-fae49.firebasestorage.app",
+  messagingSenderId: "507243746832",
+  appId: "1:507243746832:web:b0ac2574063fd89dc7dc95"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+/* ============================================================
+   LOCAL + CLOUD DATABASE
+============================================================ */
+let teacherDB = [];
+let generalDB = [];
+let currentUser = null;
+
+let editingState = null; // { dbName: "teacher" | "general", index: number }
+  
+// Favorites filter state
+let favOnly = {
+  teacher: false,
+  general: false
+};
+
+// Search terms for Teacher / General
+let searchTerms = {
+  teacher: "",
+  general: ""
+};
+
+// Practice Hub filter (which confidence bucket to show)
+let practiceHubFilter = "fail-bad"; // default: Fail + Bad
+  
+window.updateSearchTerm = function (dbName, value) {
+  searchTerms[dbName] = (value || "").toLowerCase();
+  renderLists();
+};
+
+  window.setPracticeHubFilter = function (value) {
+  practiceHubFilter = value || "fail-bad";
+  // Re-render so the Practice Hub list + stats update
+  renderLists();
+};
+  
+// Update favorites-only filter and re-render
+
+  
+// For undo (stores the state before the last add / bulk add)
+let lastAddSnapshot = null;
+
+const LOCAL_TEACHER = "teacher_db_v2";
+const LOCAL_GENERAL = "general_db_v2";
+
+function loadLocalDB() {
+  teacherDB = JSON.parse(localStorage.getItem(LOCAL_TEACHER) || "[]");
+  generalDB = JSON.parse(localStorage.getItem(LOCAL_GENERAL) || "[]");
+}
+
+function saveLocalDB() {
+  localStorage.setItem(LOCAL_TEACHER, JSON.stringify(teacherDB));
+  localStorage.setItem(LOCAL_GENERAL, JSON.stringify(generalDB));
+}
+
+// Save a copy of both DBs before we change them (for undo)
+function snapshotBeforeAdd() {
+  lastAddSnapshot = {
+    teacher: JSON.parse(JSON.stringify(teacherDB)),
+    general: JSON.parse(JSON.stringify(generalDB))
+  };
+}
+
+// Undo the most recent addWord / bulkAdd
+window.undoLastAdd = function () {
+  if (!lastAddSnapshot) {
+    alert("Nothing to undo.");
+    return;
+  }
+
+  // Restore previous state
+  teacherDB = lastAddSnapshot.teacher;
+  generalDB = lastAddSnapshot.general;
+
+  // Clear snapshot so we don't undo the same thing twice by accident
+  lastAddSnapshot = null;
+
+  // Save + refresh UI
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  alert("Last add has been undone.");
+};
+  
+async function loadCloudDB(uid) {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    teacherDB = data.teacherDB || [];
+    generalDB = data.generalDB || [];
+  }
+}
+
+async function saveCloudDB(uid) {
+  const ref = doc(db, "users", uid);
+  await setDoc(ref, { teacherDB, generalDB }, { merge: true });
+}
+
+async function syncOnLogin(uid) {
+  loadLocalDB();
+
+  const localTeacher = [...teacherDB];
+  const localGeneral = [...generalDB];
+  const hasLocal = localTeacher.length || localGeneral.length;
+
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const data = snap.data();
+    const cloudTeacher = data.teacherDB || [];
+    const cloudGeneral = data.generalDB || [];
+
+    if (cloudTeacher.length || cloudGeneral.length) {
+      teacherDB = cloudTeacher;
+      generalDB = cloudGeneral;
+      saveLocalDB();
+    } else if (hasLocal) {
+      await saveCloudDB(uid);
+    }
+  } else if (hasLocal) {
+    await saveCloudDB(uid);
+  }
+}
+
+/* ============================================================
+   WORD LIST RENDERING + STATS
+============================================================ */
+function computeStats(db) {
+  const attempts = db.reduce((sum, w) => sum + (w.correct || 0) + (w.wrong || 0), 0);
+  const correct = db.reduce((sum, w) => sum + (w.correct || 0), 0);
+  const percent = attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
+  return { attempts, correct, percent };
+}
+
+function renderLists() {
+  const teacherList = document.getElementById("teacher-list");
+  const generalList = document.getElementById("general-list");
+  const teacherStatsEl = document.getElementById("teacher-stats");
+  const generalStatsEl = document.getElementById("general-stats");
+  const overallStatsEl = document.getElementById("overall-stats");
+
+  // ===== Update Practice Hub (Missed tab) =====
+  const missedListEl  = document.getElementById("missed-list");
+  const missedStatsEl = document.getElementById("missed-stats");
+
+  if (missedListEl && missedStatsEl) {
+    const groupWords = getPracticeHubWords();
+
+    if (!groupWords.length) {
+      missedListEl.innerHTML =
+        "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No missed words yet. Get some wrong in practice first 😈</p>";
+      missedStatsEl.textContent = "Stats: no attempts yet";
+    } else {
+      missedListEl.innerHTML = groupWords.map(w => `
+        <div style="padding:10px;border-bottom:1px solid #eee;">
+          <strong>${w.he}</strong> — ${w.en}
+          ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
+          <div style="font-size:0.8rem;color:#999;margin-top:4px;">
+            Correct: ${w.correct || 0} · Wrong: ${w.wrong || 0} · Seen: ${w.seen || 0}
+          </div>
+        </div>
+      `).join("");
+
+      const s = computeStats(groupWords);
+      missedStatsEl.textContent =
+        `Stats: ${s.percent}% (${s.correct}/${s.attempts} correct)`;
+    }
+  }
+
+  // ===== Build Teacher list (with search + favorites) =====
+  const teacherRows = teacherDB
+    .map((w, i) => ({ w, i }))
+    .filter(({ w }) => {
+      // favorites-only filter
+      if (favOnly.teacher && !w.favorite) return false;
+
+      // search filter
+      const term = searchTerms.teacher;
+      if (!term) return true;
+
+      const haystack = `${w.he} ${w.en} ${w.tr || ""}`.toLowerCase();
+      return haystack.includes(term);
+    });
+
+  if (teacherList) {
+    teacherList.innerHTML = teacherRows.length
+      ? teacherRows.map(({ w, i }) => wordRow("teacher", i, w)).join("")
+      : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+  }
+
+  // ===== Build General list (with search + favorites) =====
+  const generalRows = generalDB
+    .map((w, i) => ({ w, i }))
+    .filter(({ w }) => {
+      if (favOnly.general && !w.favorite) return false;
+
+      const term = searchTerms.general;
+      if (!term) return true;
+
+      const haystack = `${w.he} ${w.en} ${w.tr || ""}`.toLowerCase();
+      return haystack.includes(term);
+    });
+
+  if (generalList) {
+    generalList.innerHTML = generalRows.length
+      ? generalRows.map(({ w, i }) => wordRow("general", i, w)).join("")
+      : "<p style='padding:6px 10px;color:#777;font-size:0.9rem;'>No words match.</p>";
+  }
+
+  // ===== Stats =====
+  const all = [...teacherDB, ...generalDB];
+  const t = computeStats(teacherDB);
+  const g = computeStats(generalDB);
+  const a = computeStats(all);
+
+  if (teacherStatsEl) {
+    teacherStatsEl.textContent = t.attempts
+      ? `Stats: ${t.percent}% (${t.correct}/${t.attempts} correct)`
+      : "Stats: no attempts yet";
+  }
+
+  if (generalStatsEl) {
+    generalStatsEl.textContent = g.attempts
+      ? `Stats: ${g.percent}% (${g.correct}/${g.attempts} correct)`
+      : "Stats: no attempts yet";
+  }
+
+  if (overallStatsEl) {
+    overallStatsEl.textContent =
+      `Teacher: ${t.percent}% (${t.correct}/${t.attempts}) · ` +
+      `General: ${g.percent}% (${g.correct}/${g.attempts}) · ` +
+      `Overall: ${a.percent}% (${a.correct}/${a.attempts})`;
+  }
+}
+
+function wordRow(db, index, w) {
+  const star = w.favorite ? "★" : "☆";
+
+  return `
+    <div style="position:relative;padding:12px 12px 10px 12px;border-bottom:1px solid #eee;">
+      <!-- tiny favorite square in the top-right -->
+      <button
+        onclick="toggleFavorite('${db}', ${index})"
+        style="
+          position:absolute;
+          top:6px;
+          right:8px;
+          width:18px;
+          height:18px;
+          border-radius:4px;
+          border:1px solid ${w.favorite ? "#fbbf24" : "#dddddd"};
+          background:${w.favorite ? "#fff7cc" : "#ffffff"};
+          font-size:0.85rem;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          cursor:pointer;
+          padding:0;
+          line-height:1;
+          color:${w.favorite ? "#f59e0b" : "#bbbbbb"};
+        "
+        title="Toggle favorite"
+      >
+        ${star}
+      </button>
+
+      <!-- word content, with a little right padding so it doesn't hit the star -->
+      <div style="padding-right:26px;">
+        <strong>${w.he}</strong> — ${w.en}
+        ${w.tr ? `<div style="color:#777;font-size:0.9rem;">${w.tr}</div>` : ""}
+      </div>
+
+      <div style="margin-top:6px; display:flex; gap:6px;">
+        <button
+          onclick="startEditWord('${db}', ${index})"
+          style="
+            background:#4fa3ff;
+            color:white;
+            border:none;
+            padding:6px 12px;
+            border-radius:6px;
+          "
+        >
+          Edit
+        </button>
+
+        <button
+          onclick="deleteWord('${db}', ${index})"
+          style="
+            background:#ff6f6f;
+            color:white;
+            border:none;
+            padding:6px 12px;
+            border-radius:6px;
+          "
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+window.deleteWord = function (db, i) {
+  if (db === "teacher") teacherDB.splice(i,1);
+  else generalDB.splice(i,1);
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+};
+
+window.startEditWord = function (dbName, index) {
+  const arr = dbName === "teacher" ? teacherDB : generalDB;
+  const w = arr[index];
+  if (!w) return;
+
+  // Fill the form inputs with existing values
+  document.getElementById("hebrew").value   = w.he || "";
+  document.getElementById("translit").value = w.tr || "";
+  document.getElementById("english").value  = w.en || "";
+  document.getElementById("db-select").value = dbName;
+
+  // Remember what we're editing
+  editingState = { dbName, index };
+
+  // Switch UI into "edit" mode
+  const addBtn    = document.getElementById("add-word-btn");
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  const status    = document.getElementById("edit-status");
+
+  if (addBtn) addBtn.textContent = "Save Changes";
+  if (cancelBtn) cancelBtn.style.display = "inline-block";
+  if (status) status.textContent = `Editing existing word in ${dbName} database...`;
+};
+
+window.cancelEdit = function () {
+  editingState = null;
+
+  // Clear inputs
+  document.getElementById("hebrew").value   = "";
+  document.getElementById("translit").value = "";
+  document.getElementById("english").value  = "";
+
+  // Reset UI text
+  const addBtn    = document.getElementById("add-word-btn");
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  const status    = document.getElementById("edit-status");
+
+  if (addBtn) addBtn.textContent = "Add Word";
+  if (cancelBtn) cancelBtn.style.display = "none";
+  if (status) status.textContent = "";
+};
+  
+window.toggleFavorite = function (dbName, index) {
+  const arr = dbName === "teacher" ? teacherDB : generalDB;
+  const w = arr[index];
+  if (!w) return;
+
+  w.favorite = !w.favorite; // flip true/false
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+};
+  
+window.addWord = function () {
+  const he = document.getElementById("hebrew").value.trim();
+  const tr = document.getElementById("translit").value.trim();
+  const en = document.getElementById("english").value.trim();
+  const dbChoice = document.getElementById("db-select").value;
+
+  if (!he || !en) return alert("Hebrew + English required.");
+
+  const addBtn    = document.getElementById("add-word-btn");
+  const cancelBtn = document.getElementById("cancel-edit-btn");
+  const status    = document.getElementById("edit-status");
+
+  // === EDIT EXISTING WORD ===
+  if (editingState) {
+    const sourceArr = editingState.dbName === "teacher" ? teacherDB : generalDB;
+    let word = sourceArr[editingState.index];
+    if (!word) {
+      // nothing to edit; just reset
+      editingState = null;
+    } else {
+      // update core fields
+      word.he = he;
+      word.tr = tr;
+      word.en = en;
+
+      // if user changed which DB it belongs to, move it
+      if (dbChoice !== editingState.dbName) {
+        sourceArr.splice(editingState.index, 1);
+        const targetArr = dbChoice === "teacher" ? teacherDB : generalDB;
+        targetArr.push(word);
+      }
+    }
+
+    // exit edit mode
+    editingState = null;
+    if (addBtn) addBtn.textContent = "Add Word";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (status) status.textContent = "";
+
+    saveLocalDB();
+    if (currentUser) saveCloudDB(currentUser.uid);
+    renderLists();
+
+    // clear inputs
+    document.getElementById("hebrew").value   = "";
+    document.getElementById("translit").value = "";
+    document.getElementById("english").value  = "";
+
+    return; // important: don't fall through to "add new"
+  }
+
+  // === ADD NEW WORD (existing behavior) ===
+  snapshotBeforeAdd();
+
+     const w = {
+    he,
+    tr,
+    en,
+    correct: 0,
+    wrong: 0,
+    created: Date.now(),
+    seen: 0,
+    lastSeen: 0
+  };
+
+  if (dbChoice === "teacher") teacherDB.push(w);
+  else generalDB.push(w);
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
+  renderLists();
+
+  document.getElementById("hebrew").value   = "";
+  document.getElementById("translit").value = "";
+  document.getElementById("english").value  = "";
+};
+/* ============================================================
+   BULK ADD WORDS
+============================================================ */
+window.bulkAdd = function () {
+  const textarea = document.getElementById("bulk-input");
+  const lines = textarea.value.trim().split(/\r?\n/);
+  const dbChoice = document.getElementById("db-select").value;
+
+  // take snapshot BEFORE we start adding multiple words
+  snapshotBeforeAdd();
+
+  let added = 0;
+  let skippedInvalid = [];      // lines that don't have enough parts
+  let skippedDuplicates = [];   // Hebrew words that were already added
+
+  // 1) Build a set of existing Hebrew words (trimmed) from BOTH DBs
+  //    This represents words you already have saved.
+  const existingHebrew = new Set(
+    [...teacherDB, ...generalDB]
+      .map(w => (w.he || "").trim())
+      .filter(Boolean)
+  );
+
+  // 2) Track Hebrew seen in THIS bulk paste too
+  //    So if the same Hebrew appears twice in the paste, only the first is added.
+  const batchHebrew = new Set();
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i].trim();
+    if (!raw) continue;
+
+    const parts = raw.split(/[,;\t]/).map(p => p.trim()).filter(Boolean);
+    if (parts.length < 2) {
+      // not enough info on this line to make a word
+      skippedInvalid.push(i + 1);
+      continue;
+    }
+
+    let he = "", tr = "", en = "";
+
+    if (parts.length === 2) {
+      [he, en] = parts;
+    } else {
+      he = parts[0];
+      tr = parts[1];
+      en = parts.slice(2).join(", ");
+    }
+
+    const heKey = (he || "").trim();
+    if (!heKey) {
+      skippedInvalid.push(i + 1);
+      continue;
+    }
+
+    // 3) DUPLICATE CHECK — Hebrew only
+    //    If this Hebrew already exists in DB OR appeared earlier in this paste,
+    //    skip adding the whole entry.
+    if (existingHebrew.has(heKey) || batchHebrew.has(heKey)) {
+      skippedDuplicates.push(heKey);
+      continue;
+    }
+
+    // mark as seen so later lines in this batch detect it as a duplicate
+    batchHebrew.add(heKey);
+    // also add to existingHebrew so additional lines see it as "already in DB"
+    existingHebrew.add(heKey);
+
+    const w = {
+      he: heKey,
+      tr,
+      en,
+      correct: 0,
+      wrong: 0,
+      created: Date.now(),
+      seen: 0,
+      lastSeen: 0
+    };
+
+    if (dbChoice === "teacher") teacherDB.push(w);
+    else generalDB.push(w);
+
+    added++;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
+  renderLists();
+
+  // Build a nice status message
+  let status = `Added ${added} words.`;
+  if (skippedInvalid.length) {
+    status += ` Skipped invalid lines: ${skippedInvalid.join(", ")}.`;
+  }
+  if (skippedDuplicates.length) {
+    const uniqueHeb = [...new Set(skippedDuplicates)];
+    status += ` Already added (Hebrew duplicates): ${uniqueHeb.join(", ")}.`;
+  }
+
+  document.getElementById("bulk-status").innerHTML = status;
+
+  // Clear textarea after import
+  document.getElementById("bulk-input").value = "";
+};  // <--- CLOSES bulkAdd
+// ============================================================
+//   SORTING (Teacher / General)
+// ============================================================
+window.sortDB = function (dbName, mode) {
+  let db = (dbName === "teacher") ? teacherDB : generalDB;
+  const score = w => (w.correct || 0) - (w.wrong || 0);
+
+  if (mode === "recent") {
+    favOnly[dbName] = false;
+    db.sort((a, b) => (b.created || 0) - (a.created || 0));
+  } else if (mode === "grade") {
+    favOnly[dbName] = false;
+    db.sort((a, b) => score(b) - score(a));
+  } else if (mode === "length") {
+    favOnly[dbName] = false;
+    db.sort((a, b) => (a.he || "").length - (b.he || "").length);
+  } else if (mode === "length-desc") {
+    favOnly[dbName] = false;
+    db.sort((a, b) => (b.he || "").length - (a.he || "").length);
+  } else if (mode === "fav-only") {
+    // Favorites-only view (sorted by best grade)
+    favOnly[dbName] = true;
+    db.sort((a, b) => score(b) - score(a));
+  }
+
+  if (dbName === "teacher") teacherDB = [...db];
+  else generalDB = [...db];
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+};
+/* ============================================================
+   FLASHCARDS
+============================================================ */
+let currentCard = null;
+
+function getAllWords() {
+  return [...teacherDB, ...generalDB];
+}
+
+function bumpSeen(word) {
+  if (!word) return;
+  word.seen = (word.seen || 0) + 1;
+  word.lastSeen = Date.now();
+}
+
+// Map confidence number → label (for debugging / future UI)
+function confidenceLabel(c) {
+  switch (c) {
+    case 0: return "Fail";
+    case 1: return "Bad";
+    case 2: return "OK";
+    case 3: return "Good";
+    case 4: return "Easy";
+    default: return "Unrated";
+  }
+}
+
+/**
+ * Update a word's confidence based on a user rating.
+ * level: 0=Fail, 1=Bad, 2=OK, 3=Good, 4=Easy
+ *
+ * Slow promotion rule:
+ * - If level > current → move up by only 1 step.
+ *   (e.g., current=Fail(0), user clicks Easy(4) → new=Bad(1))
+ * - If level < current → jump down to level (you can drop confidence quickly).
+ * - If no previous confidence → set directly to level.
+ *
+ * Also updates correct/wrong counts to keep old stats useful:
+ * - Fail/Bad → wrong++
+ * - OK       → correct++ and wrong++
+ * - Good/Easy→ correct++
+ */
+function updateConfidence(word, level) {
+  if (!word) return;
+
+  let current =
+    typeof word.confidence === "number" ? word.confidence : null;
+
+  if (current === null) {
+    // first time rating this word
+    word.confidence = level;
+  } else if (level > current) {
+    word.confidence = current + 1; // slow promotion (one step)
+  } else if (level < current) {
+    word.confidence = level;       // fast demotion
+  } else {
+    // same level as before → no change
+    word.confidence = current;
+  }
+
+  // Update correct/wrong stats (so existing graphs still make sense)
+  if (level <= 1) {
+    // Fail or Bad
+    word.wrong = (word.wrong || 0) + 1;
+  } else if (level >= 3) {
+    // Good or Easy
+    word.correct = (word.correct || 0) + 1;
+  } else {
+    // OK
+    word.correct = (word.correct || 0) + 1;
+    word.wrong   = (word.wrong   || 0) + 1;
+  }
+}
+
+// Simple SRS picker: prefers low-confidence words and those
+// that haven't been seen recently.
+function srsPickWord(pool) {
+  if (!pool.length) return null;
+
+  const now = Date.now();
+
+  const weights = pool.map(w => {
+    const c = (typeof w.confidence === "number") ? w.confidence : 2; // default OK
+    // Lower confidence → higher difficulty
+    const difficulty = 5 - c; // Fail(0)→5 .. Easy(4)→1
+
+    const last = w.lastSeen || 0;
+    const ageMinutes = (now - last) / 60000;
+    // recently seen → ~0.5; long time ago → up to ~4
+    const recency = Math.min(4, 0.5 + ageMinutes / 10);
+
+    return difficulty * recency;
+  });
+
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+}
+
+  
+  
+// ---------- PRACTICE SCOPE (All / Teacher / General / Favorites) ----------
+let practiceScopeSelect = document.getElementById("practice-scope");
+let practiceScope = practiceScopeSelect ? practiceScopeSelect.value : "all";
+
+window.setPracticeScope = function (scope) {
+  practiceScope = scope || "all";
+  // refresh main flashcard when pool changes so you see it immediately
+  newCard();
+};
+
+function getPracticeWords() {
+  let words;
+
+  if (practiceScope === "teacher") {
+    words = teacherDB;
+  } else if (practiceScope === "general") {
+    words = generalDB;
+  } else if (practiceScope === "favorites") {
+    words = getAllWords().filter(w => w.favorite);
+  } else {
+    // "all"
+    words = getAllWords();
+  }
+
+  // if Favorites has nothing yet, quietly fall back to all words
+  if (!words.length && practiceScope === "favorites") {
+    words = getAllWords();
+  }
+
+  return words;
+}
+
+// Missed words still come from the full database (not limited by scope)
+function getPracticeHubWords() {
+  const all = getAllWords();
+  return all.filter(w => {
+    const c = (typeof w.confidence === "number") ? w.confidence : null;
+
+    switch (practiceHubFilter) {
+      case "fail":
+        return c === 0;
+      case "bad":
+        return c === 1;
+      case "ok":
+        return c === 2;
+      case "good":
+        return c === 3;
+      case "easy":
+        return c === 4;
+      case "fail-bad":
+        return c === 0 || c === 1;
+      case "all":
+        return c !== null;
+      default:
+        return c !== null;
+    }
+  });
+}
+  
+window.newCard = function () {
+  const all = getPracticeWords();
+  const front = document.getElementById("flashcard-front");
+  const back  = document.getElementById("flashcard-back");
+  const card  = document.getElementById("flashcard");
+  const flipBtn   = document.getElementById("flash-flip-btn");
+  const ratingRow = document.getElementById("flash-rating-row");
+
+  if (!front || !back || !card) return;
+
+  // Hide the card while we update so you don't see the answer flash
+  card.style.visibility = "hidden";
+
+  // Always reset to front + hide ratings, show Flip
+  card.classList.remove("flipped");
+  if (flipBtn)   flipBtn.style.display   = "inline-block";
+  if (ratingRow) ratingRow.style.display = "none";
+
+  if (!all.length) {
+    front.innerText = 'Add some words in the "Manage Words" tab first 🙂';
+    back.innerHTML  = '';
+    card.style.visibility = "visible";
+    return;
+  }
+
+  // Pick word (SRS)
+  currentCard =
+    srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(currentCard);
+
+  const mode = document.getElementById("flash-mode").value;
+  const frontText = (mode === "he-to-en")
+    ? currentCard.he
+    : currentCard.en;
+
+  const backMain = (mode === "he-to-en")
+    ? currentCard.en
+    : currentCard.he;
+
+  const backTr = currentCard.tr ? ` (${currentCard.tr})` : "";
+
+  // FRONT: just the question
+  front.innerText = frontText;
+
+  // BACK: question on top, divider, answer on bottom (Anki-style)
+  back.innerHTML = `
+    <div class="flashcard-content">
+      <div class="flashcard-question">${frontText}</div>
+      <hr class="flashcard-divider">
+      <div class="flashcard-answer">${backMain}${backTr}</div>
+    </div>
+  `;
+
+  card.style.visibility = "visible";
+};
+
+window.flipCard = function () {
+  const card      = document.getElementById("flashcard");
+  const flipBtn   = document.getElementById("flash-flip-btn");
+  const ratingRow = document.getElementById("flash-rating-row");
+
+  if (!card || !currentCard) return;
+
+  const willBeFlipped = !card.classList.contains("flipped");
+  card.classList.toggle("flipped");
+
+  if (willBeFlipped) {
+    // We just flipped TO the back → hide Flip, show ratings
+    if (flipBtn)   flipBtn.style.display   = "none";
+    if (ratingRow) ratingRow.style.display = "flex";
+  } else {
+    // Flipped back to front (not super necessary, but keeps state sane)
+    if (flipBtn)   flipBtn.style.display   = "inline-block";
+    if (ratingRow) ratingRow.style.display = "none";
+  }
+};
+  
+function handleFlashcardRating(level) {
+  if (!currentCard) return;
+
+  updateConfidence(currentCard, level);
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  // Immediately go to next card; newCard() will:
+  // - reset to front
+  // - hide ratings
+  // - show Flip again
+  newCard();
+}
+
+window.rateFail = function () {
+  handleFlashcardRating(0);
+};
+
+window.rateBad = function () {
+  handleFlashcardRating(1);
+};
+
+window.rateOk = function () {
+  handleFlashcardRating(2);
+};
+
+window.rateGood = function () {
+  handleFlashcardRating(3);
+};
+
+window.rateEasy = function () {
+  handleFlashcardRating(4);
+};
+
+/* ============================================================
+   TAB SWITCHING
+============================================================ */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+
+    document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+    document.getElementById(t.dataset.tab).classList.add("active");
+  });
+});
+
+/* ============================================================
+   PRACTICE ARCADE — TILE SELECTION
+============================================================ */
+const arcadeTiles = document.querySelectorAll(".arcade-tile, .advanced-item");
+
+const arcadeOutput = document.getElementById("arcade-output");
+const arcadeUIs = {
+  builder: "ui-builder",
+  listening: "ui-listening",
+  generator: "ui-generator",
+  typing: "ui-typing",
+  mcq: "ui-mcq",
+
+  patterns: "ui-patterns",
+  vowelizer: "ui-vowelizer",
+  adaptive: "ui-adaptive",
+  conversation: "ui-conversation",
+  settings: "ui-settings"
+};
+
+arcadeTiles.forEach(tile=>{
+  tile.addEventListener("click", ()=>{
+    const tool = tile.dataset.tool;
+    if (!tool) return;
+
+    // hide all UIs
+    document.querySelectorAll(".arcade-ui").forEach(ui=>{
+      ui.style.display = "none";
+    });
+
+    // show selected one in its original place
+    const id = arcadeUIs[tool];
+    const ui = document.getElementById(id);
+    if (ui) {
+      ui.style.display = "block";
+      ui.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+});
+
+/* ============================================================
+   SENTENCE BUILDER (placeholder)
+============================================================ */
+let builderCurrent = null;
+let builderWords = [];
+let builderChosen = [];
+let builderSourceEntries = []; // all vocab entries used in the current builder line
+
+function getBuilderLengthRange() {
+  const sel = document.getElementById("builder-length");
+  const mode = sel ? sel.value : "medium";
+
+  if (mode === "short") {
+    return { min: 2, max: 4 };
+  } else if (mode === "medium") {
+    return { min: 5, max: 8 };
+  } else { // "long"
+    return { min: 9, max: 999 };
+  }
+}
+  
+window.startSentenceBuilder = function () {
+  const all = getPracticeWords();
+
+  // Use the dropdown to decide what counts as “short/sentence/long”
+  const { min, max } = getBuilderLengthRange();
+
+  // Only use entries where the HEBREW side is already a phrase/sentence
+  const candidates = all.filter(w => {
+    const wc = (w.he || "").trim().split(/\s+/).length;
+    return wc >= min && wc <= max;
+  });
+
+  const targetEl = document.getElementById("builder-target");
+  const wordsEl  = document.getElementById("builder-words");
+
+  if (!candidates.length) {
+    targetEl.innerHTML = `
+      <p style="color:#555;font-size:0.9rem;">
+        You don’t have any saved phrases with ${min}+ words yet in this range.
+        Try adding some longer Hebrew phrases/sentences to your vocab.
+      </p>
+    `;
+    wordsEl.innerHTML = "";
+    return;
+  }
+
+  // pick one phrase/sentence from your DB (SRS-weighted)
+  builderCurrent = srsPickWord(candidates) ||
+                   candidates[Math.floor(Math.random() * candidates.length)];
+  bumpSeen(builderCurrent);
+
+  builderWords  = builderCurrent.he.trim().split(/\s+/);
+  builderChosen = [];
+
+  // build target area + feedback container
+  targetEl.innerHTML = `
+    <div style="margin-bottom:0.4rem;">
+      Arrange the words to form this sentence:<br>
+      <span style="font-size:0.95rem;color:#555;">${builderCurrent.en}</span>
+    </div>
+    <div id="builder-target-words"
+         style="min-height:40px;border:1px dashed #ccc;padding:8px;border-radius:10px;"></div>
+    <div id="builder-feedback" style="margin-top:0.4rem;font-size:0.9rem;"></div>
+  `;
+
+  // shuffle the word order
+  const indices = builderWords.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  wordsEl.innerHTML = indices.map(i => `
+    <button class="choice-btn"
+            style="display:inline-block;margin:4px 4px 0 0;"
+            onclick="builderChoose(${i})"
+            id="builder-word-${i}">
+      ${builderWords[i]}
+    </button>
+  `).join("");
+};
+
+window.builderChoose = function (idx) {
+  if (!builderCurrent) return;
+
+  // prevent double-clicking the same word
+  if (builderChosen.includes(idx)) return;
+  builderChosen.push(idx);
+
+  const btn = document.getElementById("builder-word-" + idx);
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = "0.5";
+  }
+
+  const targetWordsEl = document.getElementById("builder-target-words");
+  const chosenText = builderWords[idx];
+
+  const span = document.createElement("span");
+  span.textContent = chosenText + " ";
+  span.style.marginRight = "4px";
+  targetWordsEl.appendChild(span);
+
+  // when finished, check correctness
+  if (builderChosen.length === builderWords.length) {
+    checkSentenceBuilderAnswer();
+  }
+};
+
+function checkSentenceBuilderAnswer() {
+  const fb = document.getElementById("builder-feedback");
+  if (!fb || !builderCurrent) return;
+
+  const built   = builderChosen.map(i => builderWords[i]).join(" ");
+  const correct = builderWords.join(" ");
+
+  const builtStripped   = stripNikud(built);
+  const correctStripped = stripNikud(correct);
+
+  const isCorrect = (builtStripped === correctStripped);
+
+  if (isCorrect) {
+    fb.style.color = "#18a34a";
+    fb.textContent = "✅ Correct!";
+    // mark each vocab entry used as correct
+    (builderSourceEntries || []).forEach(w => {
+      w.correct = (w.correct || 0) + 1;
+    });
+  } else {
+    fb.style.color = "#b91c1c";
+    fb.innerHTML = `❌ Not quite.<br>Correct: <strong>${correct}</strong>`;
+    // mark each vocab entry used as wrong
+    (builderSourceEntries || []).forEach(w => {
+      w.wrong = (w.wrong || 0) + 1;
+    });
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  // auto-start a new one after a short delay
+  setTimeout(window.startSentenceBuilder, 1500);
+}
+/* ============================================================
+   LISTENING MODE (placeholder)
+============================================================ */
+window.startListeningMode = function () {
+  const all = getPracticeWords();
+  const fbEl   = document.getElementById("listening-feedback");
+  const inputEl = document.getElementById("listening-input");
+  const hintEl  = document.getElementById("listening-hint");
+
+  if (!all.length) {
+    fbEl.innerText = "Add some words first.";
+    if (hintEl) hintEl.style.display = "none";
+    return;
+  }
+
+  listeningCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(listeningCurrent);
+
+  // reset UI each round
+  fbEl.innerHTML = "Listen and type the Hebrew you hear (vowels optional).";
+  inputEl.value = "";
+  inputEl.focus();
+
+  if (hintEl) {
+    hintEl.style.display = "none";
+    hintEl.textContent = `English meaning: ${listeningCurrent.en}`;
+  }
+
+  // speak the Hebrew
+  speakHebrew(listeningCurrent.he);
+};
+
+window.replayListening = function () {
+  if (!listeningCurrent) {
+    // optional: tiny nudge
+    const fbEl = document.getElementById("listening-feedback");
+    if (fbEl) fbEl.innerText = "Click 'Start Listening' first.";
+    return;
+  }
+  speakHebrew(listeningCurrent.he);
+};
+
+window.showListeningHint = function () {
+  const hintEl = document.getElementById("listening-hint");
+  if (!hintEl) return;
+
+  if (!listeningCurrent) {
+    hintEl.style.display = "block";
+    hintEl.textContent = "Start a question first using 'Start Listening'.";
+    return;
+  }
+
+  hintEl.style.display = "block"; // reveal the already-set text
+};
+  
+window.submitListeningAnswer = function () {
+  const fbEl = document.getElementById("listening-feedback");
+  const inputEl = document.getElementById("listening-input");
+
+  if (!listeningCurrent) {
+    fbEl.innerText = "Click 'Start Listening' first.";
+    return;
+  }
+
+  const userRaw = inputEl.value.trim();
+  const correctRaw = listeningCurrent.he.trim();
+  if (!userRaw) {
+    fbEl.innerText = "Type what you heard first.";
+    return;
+  }
+
+  const user    = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  if (user === correct) {
+    fbEl.innerHTML = "✅ Correct! (Click 'Start Listening' for another.)";
+    listeningCurrent.correct = (listeningCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    listeningCurrent.wrong = (listeningCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(window.startListeningMode, 1500);
+};
+
+/* ============================================================
+   RANDOM SENTENCE GENERATOR (simple)
+============================================================ */
+window.generateRandomSentence = function () {
+  const box = document.getElementById("generated-sentence");
+  const all = getPracticeWords();
+
+  if (all.length < 3) {
+    box.innerText = "Add at least 3 words to generate a sentence.";
+    return;
+  }
+
+  // pick 3–6 random unique words
+  const count = Math.min(6, Math.max(3, Math.floor(Math.random() * 4) + 3));
+  const used = new Set();
+  const chosen = [];
+
+  while (chosen.length < count && chosen.length < all.length) {
+    const w = all[Math.floor(Math.random() * all.length)];
+    if (!used.has(w.he)) {
+      used.add(w.he);
+      chosen.push(w);
+    }
+  }
+
+  chosen.forEach(bumpSeen);
+saveLocalDB();
+if (currentUser) saveCloudDB(currentUser.uid);
+renderLists();
+  
+  const hebrew = chosen.map(w => w.he).join(" ");
+  const english = chosen.map(w => w.en).join(" · ");
+
+  box.innerHTML = `
+    <div style="margin-bottom:0.4rem;">${hebrew}</div>
+    <div style="font-size:0.9rem;color:#555;">${english}</div>
+    <div style="font-size:0.8rem;color:#999;margin-top:0.2rem;">
+      (May not be perfect grammar — this is for reading/recognition practice.)
+    </div>
+  `;
+};
+
+/* ============================================================
+   TYPING MODE (real practice, vowels optional)
+============================================================ */
+let typingCurrent = null;
+let listeningCurrent = null; 
+
+// Strip Hebrew nikud (vowels & cantillation) so we can compare
+// answers without requiring vowels.
+function stripNikud(str) {
+  if (!str) return "";
+  return str
+    .normalize("NFD")
+    .replace(/[\u0591-\u05C7]/g, "") // Hebrew combining marks
+    .normalize("NFC")
+    .trim();
+}
+
+function speakHebrew(text) {
+  if (!("speechSynthesis" in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "he-IL";   // use Hebrew voice when available
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+  
+window.startTypingMode = function () {
+  const all = getPracticeWords();
+  const promptEl = document.getElementById("typing-prompt");
+  const inputEl = document.getElementById("typing-input");
+  const fbEl = document.getElementById("typing-feedback");
+
+  if (!all.length) {
+    promptEl.innerText = "Add some words first.";
+    return;
+  }
+
+  typingCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(typingCurrent);
+promptEl.innerHTML = `
+  Translate into Hebrew (vowels optional):<br>
+  <strong>${typingCurrent.en}</strong>
+`;
+  inputEl.value = "";
+  fbEl.innerText = "";
+  inputEl.focus();
+};
+
+window.submitTypingAnswer = function () {
+  const inputEl = document.getElementById("typing-input");
+  const fbEl = document.getElementById("typing-feedback");
+
+  if (!typingCurrent) {
+    fbEl.innerText = "Click 'Begin Typing Practice' first.";
+    return;
+  }
+
+  const userRaw = inputEl.value.trim();
+  const correctRaw = typingCurrent.he.trim();
+
+  if (!userRaw) {
+    fbEl.innerText = "Type your answer first.";
+    return;
+  }
+
+  const user = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  if (user === correct) {
+    fbEl.innerHTML = "✅ Correct!";
+    typingCurrent.correct = (typingCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    typingCurrent.wrong = (typingCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists(); // keep stats + Missed tab updated
+
+  setTimeout(() => {
+    window.startTypingMode();
+  }, 1000);
+};
+  
+/* ============================================================
+   ARCADE MCQ (real game)
+============================================================ */
+let arcadeMCQCurrent = null;
+let arcadeMCQChoices = [];
+  
+window.startArcadeMCQ = function () {
+  const qEl = document.getElementById("arcade-mcq-question");
+  const optEl = document.getElementById("arcade-mcq-options");
+
+  const all = getPracticeWords();
+  if (all.length < 2) {
+    qEl.innerText = "Add at least 2 words to play.";
+    optEl.innerHTML = "";
+    return;
+  }
+
+  arcadeMCQCurrent = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(arcadeMCQCurrent);
+
+  const choices = [arcadeMCQCurrent];
+  while (choices.length < 4 && choices.length < all.length) {
+    const c = all[Math.floor(Math.random() * all.length)];
+    if (!choices.includes(c)) choices.push(c);
+  }
+
+  // Shuffle
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  arcadeMCQChoices = choices;
+
+  qEl.innerHTML = `What is the meaning of: <strong>${arcadeMCQCurrent.he}</strong>?`;
+  optEl.innerHTML = choices
+    .map((c, idx) => `
+      <button class="choice-btn" style="margin-top:6px;" onclick="answerArcadeMCQ(${idx})">
+        ${c.en}
+      </button>
+    `)
+    .join("");
+};
+
+window.answerArcadeMCQ = function (index) {
+  const qEl = document.getElementById("arcade-mcq-question");
+  const chosen = arcadeMCQChoices[index];
+
+  if (!arcadeMCQCurrent || !chosen) return;
+
+  if (chosen === arcadeMCQCurrent) {
+    qEl.innerHTML += "<div style='margin-top:0.4rem;color:#18a34a;'>✅ Correct!</div>";
+    arcadeMCQCurrent.correct = (arcadeMCQCurrent.correct || 0) + 1;
+  } else {
+    qEl.innerHTML += `<div style='margin-top:0.4rem;color:#b91c1c;'>❌ Wrong. Correct: ${arcadeMCQCurrent.en}</div>`;
+    arcadeMCQCurrent.wrong = (arcadeMCQCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+
+  setTimeout(window.startArcadeMCQ, 1000);
+};
+
+/* ============================================================
+   MISSED WORDS TAB PRACTICE
+============================================================ */
+let missedCardCurrent = null;
+
+window.newMissedCard = function () {
+  const groupWords = getPracticeHubWords();
+  if (!groupWords.length) {
+    alert("No words in this practice group yet. Try a different filter.");
+    return;
+  }
+
+  missedCardCurrent =
+    srsPickWord(groupWords) ||
+    groupWords[Math.floor(Math.random() * groupWords.length)];
+
+  bumpSeen(missedCardCurrent);
+
+  const front = document.getElementById("missed-flash-front");
+  const back  = document.getElementById("missed-flash-back");
+  const card  = document.getElementById("missed-flashcard");
+
+  front.innerText = missedCardCurrent.he;
+  back.innerText  = missedCardCurrent.en +
+    (missedCardCurrent.tr ? ` (${missedCardCurrent.tr})` : "");
+
+  card.classList.remove("flipped");
+};
+
+window.flipMissedCard = function () {
+  document.getElementById("missed-flashcard").classList.toggle("flipped");
+};
+
+window.markMissedRight = function () {
+  if (!missedCardCurrent) return;
+
+  // Right = rate as "Good" (3), which will slowly promote confidence
+  updateConfidence(missedCardCurrent, 3);
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();      // refresh Practice Hub list + stats
+  newMissedCard();    // next card
+};
+
+window.markMissedWrong = function () {
+  if (!missedCardCurrent) return;
+
+  // Wrong = rate as "Fail" (0), which will drop confidence quickly
+  updateConfidence(missedCardCurrent, 0);
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+  newMissedCard();
+};
+
+/* --- Missed-only MCQ --- */
+let missedMCQCurrent = null;
+let missedMCQChoices = [];
+
+window.newMissedMCQ = function () {
+  const groupWords = getPracticeHubWords();
+  if (groupWords.length < 2) {
+    alert("Need at least 2 words in this practice group.");
+    return;
+  }
+
+  missedMCQCurrent =
+    srsPickWord(groupWords) ||
+    groupWords[Math.floor(Math.random() * groupWords.length)];
+  bumpSeen(missedMCQCurrent);
+
+  const choices = [missedMCQCurrent];
+
+  while (choices.length < 4 && choices.length < groupWords.length) {
+    const c = groupWords[Math.floor(Math.random() * groupWords.length)];
+    if (!choices.includes(c)) choices.push(c);
+  }
+
+  // shuffle choices
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  missedMCQChoices = choices;
+
+  const qEl = document.getElementById("missed-mcq-question");
+  const optEl = document.getElementById("missed-mcq-options");
+
+  qEl.innerHTML = `What is the meaning of: <strong>${missedMCQCurrent.he}</strong>?`;
+  optEl.innerHTML = choices
+    .map((c, idx) => `
+      <button class="choice-btn" style="margin-top:6px;" onclick="answerMissedMCQ(${idx})">
+        ${c.en}
+      </button>
+    `)
+    .join("");
+};
+
+window.answerMissedMCQ = function (index) {
+  const chosen = missedMCQChoices[index];
+  if (!missedMCQCurrent || !chosen) return;
+
+  const qEl = document.getElementById("missed-mcq-question");
+
+  if (chosen === missedMCQCurrent) {
+    qEl.innerHTML += "<div style='margin-top:0.4rem;color:#18a34a;'>✅ Correct!</div>";
+    // Correct MCQ → treat as "Good"
+    updateConfidence(missedMCQCurrent, 3);
+  } else {
+    qEl.innerHTML += `<div style='margin-top:0.4rem;color:#b91c1c;'>❌ Wrong. Correct: ${missedMCQCurrent.en}</div>`;
+    // Wrong MCQ → treat as "Fail"
+    updateConfidence(missedMCQCurrent, 0);
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(window.newMissedMCQ, 1000);
+};
+/* --- Missed-only typing --- */
+let missedTypingCurrent = null;
+
+window.startMissedTyping = function () {
+  const groupWords = getPracticeHubWords();
+  const promptEl = document.getElementById("missed-typing-prompt");
+  const inputEl  = document.getElementById("missed-typing-input");
+  const fbEl     = document.getElementById("missed-typing-feedback");
+
+  if (!groupWords.length) {
+    promptEl.innerText = "No words in this practice group yet.";
+    return;
+  }
+
+  missedTypingCurrent =
+    srsPickWord(groupWords) ||
+    groupWords[Math.floor(Math.random() * groupWords.length)];
+
+  bumpSeen(missedTypingCurrent);
+
+  promptEl.innerHTML = `
+    Translate into Hebrew (no vowels needed):<br>
+    <strong>${missedTypingCurrent.en}</strong>
+  `;
+  inputEl.value = "";
+  fbEl.innerText = "";
+  inputEl.focus();
+};
+
+window.submitMissedTypingAnswer = function () {
+  const inputEl = document.getElementById("missed-typing-input");
+  const fbEl    = document.getElementById("missed-typing-feedback");
+
+  if (!missedTypingCurrent) {
+    fbEl.innerText = "Click 'Begin Typing Practice' first.";
+    return;
+  }
+
+  const userRaw    = inputEl.value.trim();
+  const correctRaw = missedTypingCurrent.he.trim();
+
+  if (!userRaw) {
+    fbEl.innerText = "Type your answer first.";
+    return;
+  }
+
+  const user    = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  if (user === correct) {
+    fbEl.innerHTML = "✅ Correct!";
+    // Correct typing → "Good"
+    updateConfidence(missedTypingCurrent, 3);
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    // Wrong typing → "Fail"
+    updateConfidence(missedTypingCurrent, 0);
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(window.startMissedTyping, 1000);
+};
+  
+/* ============================================================
+   ADVANCED TOOLS (placeholder)
+============================================================ */
+window.analyzePatterns = function () {
+  const out = document.getElementById("patterns-output");
+  const all = getAllWords();
+  const missed = all.filter(w => (w.wrong || 0) > 0);
+
+  if (!missed.length) {
+    out.innerHTML = "No mistakes recorded yet. Do some practice first.";
+    return;
+  }
+
+  const totalWrong = missed.reduce((s, w) => s + (w.wrong || 0), 0);
+  const totalAttempts = missed.reduce(
+    (s, w) => s + (w.correct || 0) + (w.wrong || 0),
+    0
+  );
+
+  // hardest words = most wrong answers
+  const hardest = [...missed].sort((a, b) => (b.wrong || 0) - (a.wrong || 0)).slice(0, 5);
+
+  // approximate “tricky letter” impact
+  const trickyLetters = {
+    "א/ע": w => /[אע]/.test(w.he),
+    "ש/ס": w => /[שס]/.test(w.he),
+    "ב/ו": w => /[בו]/.test(w.he),
+    "ח/כ": w => /[חכ]/.test(w.he)
+  };
+
+  let trickyStats = [];
+  for (const label in trickyLetters) {
+    const filterFn = trickyLetters[label];
+    const subset = missed.filter(filterFn);
+    if (!subset.length) continue;
+    const wrong = subset.reduce((s, w) => s + (w.wrong || 0), 0);
+    trickyStats.push({ label, wrong });
+  }
+  trickyStats.sort((a, b) => b.wrong - a.wrong);
+
+  out.innerHTML = `
+    <div style="margin-bottom:0.5rem;">
+      Total mistakes on words: <strong>${totalWrong}</strong> across
+      <strong>${totalAttempts}</strong> attempts.
+    </div>
+
+    <div style="margin-top:0.6rem;">
+      <strong>Top trouble words:</strong>
+      <ul style="margin-top:0.4rem;">
+        ${hardest.map(w => `
+          <li>
+            <strong>${w.he}</strong> — ${w.en}
+            <span style="font-size:0.85rem;color:#666;">
+              (Correct: ${w.correct || 0}, Wrong: ${w.wrong || 0})
+            </span>
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+
+    <div style="margin-top:0.8rem;">
+      <strong>Tricky letter patterns (approx):</strong>
+      <ul style="margin-top:0.4rem;">
+        ${
+          trickyStats.length
+            ? trickyStats.map(t => `
+              <li>${t.label}: ${t.wrong} wrong answers on words containing these letters.</li>
+            `).join("")
+            : "<li>No clear tricky-letter pattern yet.</li>"
+        }
+      </ul>
+    </div>
+
+    <div style="margin-top:0.8rem;font-size:0.85rem;color:#555;">
+      Tip: Focus your practice on the top trouble words and tricky letter groups.
+      The Missed Words tab is perfect for that.
+    </div>
+  `;
+};
+
+window.vowelize = function () {
+  const inputEl = document.getElementById("vowelizer-input");
+  const out = document.getElementById("vowelizer-output");
+  const raw = inputEl.value.trim();
+
+  if (!raw) {
+    out.innerText = "Type a Hebrew word or phrase first.";
+    return;
+  }
+
+  const target = stripNikud(raw);
+  const all = getAllWords();
+
+  // find exact matches ignoring vowels
+  const matches = all.filter(w => stripNikud(w.he) === target);
+
+  if (!matches.length) {
+    out.innerHTML = `
+      No exact match found in your vocab.<br>
+      I can only auto-vowelize words that are already saved with vowels.
+    `;
+    return;
+  }
+
+  // choose the most practiced word as the best match
+  matches.sort((a, b) => ((b.correct || 0) + (b.wrong || 0)) -
+                         ((a.correct || 0) + (a.wrong || 0)));
+  const best = matches[0];
+
+  out.innerHTML = `
+    Closest match from your database:<br>
+    <strong>${best.he}</strong> — ${best.en}
+    ${best.tr ? `<div style="font-size:0.9rem;color:#555;">(${best.tr})</div>` : ""}
+  `;
+};
+
+/* ============================================================
+   ADAPTIVE DIFFICULTY
+============================================================ */
+let adaptiveCurrent = null;  
+
+window.startAdaptive = function () {
+  const out = document.getElementById("adaptive-output");
+  const all = getPracticeWords();
+
+  // "hard" words = at least 1 wrong, sorted by (wrong - correct) descending
+  const hard = all
+    .filter(w => (w.wrong || 0) > 0)
+    .sort((a, b) => ((b.wrong || 0) - (b.correct || 0)) -
+                    ((a.wrong || 0) - (a.correct || 0)));
+
+  if (!hard.length) {
+    out.innerHTML = "No mistake history yet — practice first, then come back.";
+    return;
+  }
+
+  adaptiveCurrent = hard[0]; // hardest word
+  bumpSeen(adaptiveCurrent);
+
+  out.innerHTML = `
+    <div>
+      Translate into Hebrew (vowels optional):<br>
+      <strong>${adaptiveCurrent.en}</strong>
+    </div>
+    <textarea id="adaptive-input" style="margin-top:0.7rem;"></textarea>
+    <button onclick="submitAdaptiveAnswer()" style="margin-top:0.4rem;">Submit</button>
+    <div id="adaptive-feedback" style="margin-top:0.5rem;font-size:0.9rem;"></div>
+  `;
+};
+
+window.submitAdaptiveAnswer = function () {
+  const inputEl = document.getElementById("adaptive-input");
+  const fbEl = document.getElementById("adaptive-feedback");
+  const strictSetting = document.getElementById("setting-strict")?.value || "on";
+
+  if (!adaptiveCurrent) {
+    if (fbEl) fbEl.innerText = "Click 'Start Adaptive Practice' first.";
+    return;
+  }
+
+  const userRaw = (inputEl?.value || "").trim();
+  const correctRaw = adaptiveCurrent.he.trim();
+
+  if (!userRaw) {
+    if (fbEl) fbEl.innerText = "Type your answer first.";
+    return;
+  }
+
+  const user    = stripNikud(userRaw);
+  const correct = stripNikud(correctRaw);
+
+  const isCorrect = user === correct; // still strict; we just use the toggle for future flexibility
+
+  if (isCorrect) {
+    fbEl.innerHTML = "✅ Correct! Picking another hard word...";
+    adaptiveCurrent.correct = (adaptiveCurrent.correct || 0) + 1;
+  } else {
+    fbEl.innerHTML = `❌ Incorrect.<br>Correct: <strong>${correctRaw}</strong>`;
+    adaptiveCurrent.wrong = (adaptiveCurrent.wrong || 0) + 1;
+  }
+
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  setTimeout(window.startAdaptive, 1500);
+};
+
+let convoPromptWord = null;
+
+window.startConversation = function () {
+  const chat = document.getElementById("conversation-chat");
+  const all = getPracticeWords();
+
+  if (!all.length) {
+    chat.innerHTML = "Add some words first, then we can build sentences with them.";
+    return;
+  }
+
+  convoPromptWord = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  bumpSeen(convoPromptWord);
+chat.innerHTML = `
+    <div class="chat-msg-ai">
+      <span>
+        Write a short sentence in Hebrew using this word: <strong>${convoPromptWord.he}</strong>
+        (${convoPromptWord.en})
+      </span>
+    </div>
+  `;
+};
+
+window.sendConversation = function () {
+  const inputEl = document.getElementById("conversation-input");
+  const chat = document.getElementById("conversation-chat");
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  // show user message
+  const userDiv = document.createElement("div");
+  userDiv.className = "chat-msg-user";
+  const span = document.createElement("span");
+  span.textContent = text;
+  userDiv.appendChild(span);
+  chat.appendChild(userDiv);
+
+  inputEl.value = "";
+
+  // analyze which words from your DB you actually used
+  const strippedMsg = stripNikud(text);
+  const all = getAllWords();
+  const used = all.filter(w => strippedMsg.includes(stripNikud(w.he)));
+
+  const aiDiv = document.createElement("div");
+  aiDiv.className = "chat-msg-ai";
+
+  let feedback = "";
+  if (!used.length) {
+    feedback = "I didn't recognize any of your saved vocab in that sentence. Try to include at least one known word.";
+  } else {
+    feedback = "Nice! I recognized these words: " +
+      used.map(w => `${w.he} (${w.en})`).join(", ");
+  }
+
+  // new prompt
+    const nextPrompt = srsPickWord(all) || all[Math.floor(Math.random() * all.length)];
+  convoPromptWord = nextPrompt;
+  bumpSeen(nextPrompt);
+  saveLocalDB();
+  if (currentUser) saveCloudDB(currentUser.uid);
+  renderLists();
+
+  const aiSpan = document.createElement("span");
+  aiSpan.innerHTML = `
+    ${feedback}<br><br>
+    Next: write another sentence in Hebrew using <strong>${nextPrompt.he}</strong> (${nextPrompt.en}).
+  `;
+  aiDiv.appendChild(aiSpan);
+  chat.appendChild(aiDiv);
+
+  chat.scrollTop = chat.scrollHeight;
+};
+
+
+window.savePracticeSettings = function () {
+  document.getElementById("settings-status").innerText = "Settings saved!";
+};
+
+
+/* ============================================================
+   AUTHENTICATION
+============================================================ */
+document.getElementById("auth-signup").onclick = async()=>{
+  try {
+    const email = document.getElementById("auth-email").value;
+    const pass = document.getElementById("auth-password").value;
+    await createUserWithEmailAndPassword(auth, email, pass);
+    alert("Signed up!");
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+document.getElementById("auth-login").onclick = async()=>{
+  try {
+    const email = document.getElementById("auth-email").value;
+    const pass = document.getElementById("auth-password").value;
+    await signInWithEmailAndPassword(auth, email, pass);
+    alert("Logged in!");
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+document.getElementById("auth-logout").onclick = async()=>{
+  await signOut(auth);
+};
+
+/* ============================================================
+   AUTH STATE LISTENER
+============================================================ */
+onAuthStateChanged(auth, async (user)=>{
+  currentUser = user;
+
+  const statusEl   = document.getElementById("auth-status-text");
+  const emailInput = document.getElementById("auth-email");
+  const passInput  = document.getElementById("auth-password");
+  const loginBtn   = document.getElementById("auth-login");
+  const signupBtn  = document.getElementById("auth-signup");
+  const logoutBtn  = document.getElementById("auth-logout");
+
+  if (user) {
+    // --- LOGGED IN STATE ---
+    statusEl.innerText = "Signed in as " + user.email;
+
+    // Hide login + signup stuff
+    if (emailInput) emailInput.style.display = "none";
+    if (passInput)  passInput.style.display  = "none";
+    if (loginBtn)   loginBtn.style.display   = "none";
+    if (signupBtn)  signupBtn.style.display  = "none";
+
+    // Show logout button
+    if (logoutBtn)  logoutBtn.style.display  = "inline-block";
+
+    // Load/sync this user's data
+    await syncOnLogin(user.uid);
+
+  } else {
+    // --- LOGGED OUT STATE ---
+    statusEl.innerText = "Not signed in";
+
+    // Show login + signup stuff again
+    if (emailInput) emailInput.style.display = "inline-block";
+    if (passInput)  passInput.style.display  = "inline-block";
+    if (loginBtn)   loginBtn.style.display   = "inline-block";
+    if (signupBtn)  signupBtn.style.display  = "inline-block";
+
+    // Hide logout button
+    if (logoutBtn)  logoutBtn.style.display  = "none";
+
+    // 🔒 Clear in-memory DBs so no words show when logged out
+    teacherDB = [];
+    generalDB = [];
+
+    // (Optional but recommended) also clear from localStorage on this device
+    saveLocalDB();
+  }
+
+  // Re-render UI based on current (possibly empty) DBs
+  renderLists();
+  newCard();
+});
+
+/* ============================================================
+   INITIAL LOAD
+============================================================ */
+// Start with empty DBs; we'll populate them after we know auth state.
+// onAuthStateChanged will call renderLists() + newCard().
+renderLists();
+newCard();
+
+</script>
+</body>
+
+</html>
