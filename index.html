@@ -2908,51 +2908,86 @@ window.saveGeminiKey = function () {
 
 let aiHistory = [];
 
-function systemText(vocab) {
+// ---------- Helpers for Duolingo-style AI ----------
+
+// Very simple POS guesser based on the English gloss.
+// You can refine this later but it's enough to give Gemini a hint.
+function guessPOS(en) {
+  const e = (en || "").toLowerCase().trim();
+  if (!e) return "unknown";
+
+  if (e.startsWith("to ")) return "verb";                    // to eat, to write
+  if (e.match(/\b(i|you|he|she|we|they)\b/)) return "phrase"; // I am hungry, where are you
+  if (e.includes(" my ") || e.includes(" your ") || e.includes(" his ") || e.includes(" her ")) {
+    return "noun-phrase";
+  }
+  if (e.match(/\b(a|an|the)\b/)) return "noun";
+  return "word";
+}
+
+// Build a clean JSON array of all words with stats + guessed POS.
+// This is what we feed to Gemini.
+function buildVocabForAI() {
+  const all = [...teacherDB, ...generalDB];
+  const enriched = all.map(w => ({
+    he: w.he || "",
+    tr: w.tr || "",
+    en: w.en || "",
+    confidence: typeof w.confidence === "number" ? w.confidence : null,
+    seen: w.seen || 0,
+    wrong: w.wrong || 0,
+    correct: w.correct || 0,
+    favorite: !!w.favorite,
+    guessed_pos: guessPOS(w.en)
+  }));
+  return JSON.stringify(enriched);
+}
+  
+function systemText(vocabJSON) {
   return (
-    "You are a strict Duolingo-style Hebrew tutor that ONLY uses the student's vocabulary list.\n" +
-    "You will first silently build an internal lexicon from the list below. Each line is:\n" +
-    "HEBREW | transliteration | ENGLISH | POS=...\n" +
-    "- If POS=guess, infer whether it is a noun, verb, adjective, phrase, etc. from the English.\n" +
-    "- Remember for each entry:\n" +
-    "  • part of speech (noun / verb / adjective / adverb / phrase / sentence / other)\n" +
-    "  • Hebrew form with vowels\n" +
-    "  • transliteration\n" +
-    "  • English meaning\n" +
+    "You are a strict Duolingo-style Hebrew tutor. Follow these rules EXACTLY:\n" +
     "────────────────────────\n" +
-    "OVERALL BEHAVIOR\n" +
-    "- Act like Duolingo: short, focused drills using only this lexicon.\n" +
-    "- Mix exercise types, one question at a time. Rotate between:\n" +
-    "  1) EN → HE: \"Translate to Hebrew\" (student answers ONLY in Hebrew).\n" +
-    "  2) HE → EN: \"Translate to English\".\n" +
-    "  3) Fill-the-blank: short Hebrew sentence with one word missing (use POS to choose a verb/noun/adjective that fits).\n" +
-    "  4) Tiny dialogues: 2-line conversations using only known words plus basic glue words if needed.\n" +
-    "- Prefer full sentences/phrases. Use single words only sometimes or to review.\n" +
-    "- ALWAYS base your sentences on the student’s words; you may add very basic glue like \"ו\", \"מִ\", \"ל\", \"הַ\", \"אֲנִי\", \"אַתָּה\", \"אַתְּ\" etc. when necessary.\n" +
+    "1. USE ONLY THE STUDENT'S VOCAB (PLUS SMALL GLUE WORDS)\n" +
+    "- You are given STUDENT_VOCAB below as JSON.\n" +
+    "- Each item has: he, tr, en, confidence, seen, wrong, correct, favorite, guessed_pos.\n" +
+    "- guessed_pos tells you if something is likely a verb, noun, phrase, etc.\n" +
+    "- Build all exercises primarily from these words.\n" +
+    "- You may add a FEW very basic glue words (and, the, a, is) if needed for natural sentences.\n" +
     "────────────────────────\n" +
-    "GRADING & STRICTNESS\n" +
-    "- Grade with zero leniency: any mistake in letters, vowels, gender, number, or word order = INCORRECT.\n" +
-    "- When incorrect:\n" +
-    "  • First say it is incorrect.\n" +
-    "  • Then show the correct Hebrew with vowels, transliteration, and a brief English gloss.\n" +
-    "  • Briefly mention if the error was verb form, noun gender, wrong word, missing preposition, etc.\n" +
-    "- Recycle missed items later: if a word/sentence was wrong, ask it again in a later question in a slightly different way.\n" +
+    "2. EXERCISE TYPES (CHOOSE ONE EACH TURN)\n" +
+    "Use variety, like Duolingo. Every turn, pick ONE of these:\n" +
+    "  A. EN→HE translation: \"Translate to Hebrew: ...\"\n" +
+    "  B. Fill-in-the-blank: \"Fill in the missing Hebrew word: ... (_____) ...\"\n" +
+    "  C. Short sentence build: ask for a short Hebrew sentence using a specific word.\n" +
+    "  D. Mini dialogue line: \"Reply in Hebrew: ...\"\n" +
+    "- Prefer using lower-confidence / often-wrong words more frequently.\n" +
     "────────────────────────\n" +
-    "ANSWER FORMAT\n" +
-    "- Student answers MUST be in Hebrew for EN→HE questions. Do not accept English.\n" +
-    "- Your replies must be concise: 1–2 short sentences of feedback, plus the correction line if needed, then the NEXT question.\n" +
-    "- Always end your reply with a new question in English (what you want the student to do next).\n" +
+    "3. STRICT GRADING\n" +
+    "- Grade every Hebrew answer with ZERO leniency.\n" +
+    "- If the answer is even slightly wrong (letter, vowel, form, spacing, א vs ע, ש vs ס, ב vs ו, etc.) → INCORRECT.\n" +
+    "- Immediately show the correct Hebrew WITH vowels (nikud), transliteration, and English.\n" +
+    "- Re-ask incorrect items later in the session.\n" +
     "────────────────────────\n" +
-    "META & POS AWARENESS\n" +
-    "- Use your internal POS labels to create smart exercises:\n" +
-    "  • For verbs: practice different subjects (I/you(m)/you(f)/we) using only forms you can safely derive.\n" +
-    "  • For nouns: ask for singular/plural, or put them with adjectives.\n" +
-    "  • For adjectives: match gender/number with nouns when you can.\n" +
-    "- If the student asks a grammar question, answer briefly, then immediately continue with a new drill.\n" +
+    "4. INPUT / OUTPUT FORMAT\n" +
+    "- You ALWAYS ask your prompt in ENGLISH.\n" +
+    "- The student must answer ONLY in HEBREW (with vowels) unless they explicitly ask a meta question.\n" +
+    "- If they answer in English or mix languages, tell them to answer in Hebrew.\n" +
     "────────────────────────\n" +
-    "STUDENT VOCABULARY LIST (USE ONLY THIS LEXICON + VERY BASIC GLUE WORDS):\n" +
-    vocab +
-    "\n\nNow start or continue the quiz following ALL of these rules."
+    "5. LENGTH + STYLE\n" +
+    "- Keep responses short and focused, like Duolingo.\n" +
+    "- For each turn:\n" +
+    "  1) Say clearly: Correct / Incorrect.\n" +
+    "  2) If incorrect, show the correct Hebrew line with vowels + transliteration + English.\n" +
+    "  3) Immediately give the NEXT single exercise question.\n" +
+    "- No long explanations unless the student asks \"explain\" or similar.\n" +
+    "────────────────────────\n" +
+    "6. META QUESTIONS\n" +
+    "- If the student asks about a rule or a word, answer briefly.\n" +
+    "- Then immediately continue with a new exercise.\n" +
+    "────────────────────────\n" +
+    "STUDENT_VOCAB_JSON (use this to pick words & know their type):\n" +
+    vocabJSON +
+    "\n\nNow start or continue the strict Duolingo-style Hebrew quiz using ONLY this vocabulary."
   );
 }
 
@@ -2966,18 +3001,12 @@ window.sendAI = async function () {
 
   document.getElementById("ai-input").value = "";
 
-const vocab = [...teacherDB, ...generalDB]
-  .map(w => {
-    // If we later add w.pos, it’ll be used. For now Gemini can guess.
-    const pos = w.pos || "guess";
-    return `${w.he} | ${w.tr || ""} | ${w.en} | POS=${pos}`;
-  })
-  .join("\n");
-  
+  const vocabJSON = buildVocabForAI();  // NEW: JSON with guessed_pos etc.
+
   const contents = [
     {
       role: "user",
-      parts: [{ text: systemText(vocab) }] // Strict rules injected in chunk 6
+      parts: [{ text: systemText(vocabJSON) }]
     },
     ...aiHistory.map(x => ({
       role: x.role === "user" ? "user" : "model",
